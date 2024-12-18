@@ -3,11 +3,23 @@ hold on
 set(gca, 'XAxisLocation', 'origin');
 set(gca, 'YAxisLocation', 'origin');
 
-%Fig.19
+%IIIa  r3 > r1 && r2 > r1 + r3 no type II singular points
+% r1 = 0.6;
+% r2 = 1.6;
+% r3 = 0.8;
+
+%IVa  r3 < r1 && r2 > r1 + r3 no type IIb singular points
+% r1 = 0.8;
+% r2 = 1.6;
+% r3 = 0.6;
+
+%Vb
 r1 = 1.2;
 r2 = 1.0;
 r3 = 0.8;
 
+title(sprintf('r1=%f r2=%f r3=%f', r1, r2, r3))
+plot
 %Workspace boundary
 C1o = @(x,y) (x + r3).^2 + y.^2 - (r1 + r2)^2;   %Equation (13)
 C1i = @(x,y) (x + r3).^2 + y.^2 - (r1 - r2)^2;   %Equation (14)
