@@ -90,7 +90,22 @@ downModeLabel.FontSize = 16;
 downModeLabel.Position = [211 532 82 22];
 downModeLabel.Text = 'downMode';
 
- %draw singularity curve
+% Create ModeKnobLabel
+UIModeKnobLabel = uilabel(UIFigure);
+UIModeKnobLabel.HorizontalAlignment = 'center';
+UIModeKnobLabel.Position = [206 379 36 22];
+UIModeKnobLabel.Text = 'Mode';
+
+% Create ModeKnob
+global UIModeKnob;
+UIModeKnob = uiknob(UIFigure, 'discrete');
+UIModeKnob.Items = {'++', '+-', '-+', '--'};
+UIModeKnob.Position = [193 416 60 60];
+UIModeKnob.Value = '+-';
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%draw singularity curve
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 [fp_C1o, fp_C1i, fp_C2o, fp_C2i, fp_CCoin_U, fp_CCoin_D, fp_CCol] = loci(UIAxes, fiveLinkage.r);
 fp_C1o.PickableParts = 'none';
 fp_C1i.PickableParts = 'none';
@@ -118,9 +133,35 @@ function theta2SliderValueChanged(~, event)
     handleThetaChanged();
 end
 
-function [outputArg1,outputArg2] = AxesMouseClicked(Object, eventData)
- cp = Object.CurrentPoint(1,:);
- disp(cp);
+function  AxesMouseClicked(Object, ~)
+    global fiveLinkage;
+    global UIModeKnob;
+    global theta1Slider theta2Slider;
+    
+    cp = Object.CurrentPoint(1,:);
+    p = [cp(1) ; cp(2)];
+    [fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] = inverseKinematics(fiveLinkage.r, p);
+    disp([fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] );
+    solution = [];
+    switch UIModeKnob.Value
+    case '++'
+        solution = fiveLinkage.ik_pp;
+    case '+-'
+        solution = fiveLinkage.ik_pn;
+    case '-+'
+        solution = fiveLinkage.ik_np;
+    otherwise
+        solution = fiveLinkage.ik_nn;
+    end
+    disp(solution);
+    if (isempty(solution))
+        return;
+    end
+    
+    theta1Slider.Value = solution(1);
+    theta2Slider.Value = solution(2);
+    fiveLinkage.theta = solution;
+    handleThetaChanged();
 end
 
 function results = handleThetaChanged()
@@ -252,7 +293,7 @@ function results = updateFkModeLabel()
 
     A2C2 = fiveLinkage.fk_down - fiveLinkage.A2;
     A2B2 = fiveLinkage.b2 - fiveLinkage.A2;
-    rightCross = A2C2(1) * A2B2(2) - A2B2(1) * A2C2(1);
+    rightCross = A2C2(1) * A2B2(2) - A2B2(1) * A2C2(2);
 
     downModeLabel.Text = [cross2char(leftCross) , cross2char(rightCross)];
 

@@ -40,28 +40,28 @@ nn = [0; 0];
 %sigma1 = 1
 Y = -b1 + sqrt(det1);
 X = 2 * a1;
-theta1 = atan2d(Y, X);
+theta1 = 2 * atan2d(Y, X);
 pp(1) = theta1;
 pn(1) = theta1;
 
 %sigma1 = -1
 Y = -b1 - sqrt(det1);
 X = 2 * a1;
-theta1 = atan2d(Y, X);
+theta1 = 2 * atan2d(Y, X);
 np(1) = theta1;
 nn(1) = theta1;
 
 %sigma2 = 1
 Y = -b2 + sqrt(det2);
 X = 2 * a2;
-theta2 = atan2d(Y, X);
+theta2 = 2 * atan2d(Y, X);
 pp(2) = theta2;
 np(2) = theta2;
 
 %sigma2 = -1
 Y = -b2 - sqrt(det2);
 X = 2 * a2;
-theta2 = atan2d(Y, X);
+theta2 = 2 * atan2d(Y, X);
 pn(2) = theta2;
 nn(2) = theta2;
 

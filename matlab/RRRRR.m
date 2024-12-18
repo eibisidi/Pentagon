@@ -9,17 +9,16 @@ classdef RRRRR
         A2 %A2 coordinate [r3; 0]
         b1 %B1 coordinate
         b2 %B2 coordinate
-%         h_a1b1; %matlab plot handle of active link A1B1
-%         h_a2b2; %matlab plot handle of active link A2B2
-%         h_b1c1b2; %matlab plot handle of up-configuration
-%         h_b1c2b2; %matlab plot handle of down-configuration
         fk_nSol;  %forward kinematics solution number;
         fk_up;
         fk_down;
-        use_up; %current configuration 
         current_configuration;     % 0 down 1 up
         initial_configuration;     % 0 down 1 up
         current_position;
+        ik_pp;
+        ik_pn;
+        ik_np;
+        ik_nn;
     end
     
     methods
