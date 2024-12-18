@@ -20,7 +20,7 @@ h_b1c2b2 = []; %matlab plot handle of down-configuration
 %UI creation
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 UIFigure = uifigure;
-UIFigure.Position = [100 100 800 600];
+UIFigure.Position = [100 100 310 600];
 UIFigure.Name = 'UI Figure';
 
 UIAxesFigure = figure;
@@ -34,58 +34,60 @@ set(UIAxes, 'ButtonDownFcn', @MouseClicked);
 % Create theta1SliderLabel
 theta1SliderLabel = uilabel(UIFigure);
 theta1SliderLabel.HorizontalAlignment = 'right';
-theta1SliderLabel.Position = [35 88 39 22];
+theta1SliderLabel.Position = [22,579,39,22];
 theta1SliderLabel.Text = 'theta1';
 
 global theta1Slider theta2Slider;
 % Create theta1Slider
 theta1Slider = uislider(UIFigure);
 theta1Slider.Limits = [-360 360];
+theta1Slider.Orientation = 'vertical';
 theta1Slider.ValueChangingFcn = @theta1SliderValueChanged;
 theta1Slider.ValueChangingFcn = @theta1SliderValueChanged;
-theta1Slider.Position = [95 98 666 3];
+theta1Slider.Position = [22,9,3,571];
 
 % Create theta2SliderLabel
 theta2SliderLabel = uilabel(UIFigure);
 theta2SliderLabel.HorizontalAlignment = 'right';
-theta2SliderLabel.Position = [35 36 39 22];
+theta2SliderLabel.Position = [99,579,39,22];
 theta2SliderLabel.Text = 'theta2';
 
 % Create theta2Slider
 theta2Slider = uislider(UIFigure);
 theta2Slider.Limits = [-360 360];
+theta2Slider.Orientation = 'vertical';
 theta2Slider.ValueChangingFcn = @theta2SliderValueChanged;
 theta2Slider.ValueChangingFcn = @theta2SliderValueChanged;
-theta2Slider.Position = [95 46 666 3];
+theta2Slider.Position = [97,9,3,571];
 
 % Create ForwardKinematicsLabel
 ForwardKinematicsLabel = uilabel(UIFigure);
-ForwardKinematicsLabel.Position = [518 565 115 22];
+ForwardKinematicsLabel.Position =  [172 579 115 22];
 ForwardKinematicsLabel.Text = 'Forward Kinematics:';
 
 global UpLabel upModeLabel DownLabel downModeLabel;
 % Create UpLabel
 UpLabel = uilabel(UIFigure);
-UpLabel.Position = [516 532 25 22];
+UpLabel.Position = [172 553 25 22];
 UpLabel.Text = 'Up:';
 
 % Create upModeLabel
 upModeLabel = uilabel(UIFigure);
 upModeLabel.FontName = 'Courier';
 upModeLabel.FontSize = 16;
-upModeLabel.Position = [561 532 63 22];
+upModeLabel.Position = [209 553 63 22];
 upModeLabel.Text = 'upMode';
 
 % Create DownLabel
 DownLabel = uilabel(UIFigure);
-DownLabel.Position = [516 511 40 22];
+DownLabel.Position = [172 532 40 22];
 DownLabel.Text = 'Down:';
 
 % Create downModeLabel
 downModeLabel = uilabel(UIFigure);
 downModeLabel.FontName = 'Courier';
 downModeLabel.FontSize = 16;
-downModeLabel.Position = [561 511 82 22];
+downModeLabel.Position = [211 532 82 22];
 downModeLabel.Text = 'downMode';
 
 loci(UIAxes, fiveLinkage.r); %draw singularity curve
