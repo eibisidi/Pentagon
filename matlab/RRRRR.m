@@ -3,7 +3,7 @@ classdef RRRRR
     
     properties (Access = public)
         r % linkage length [r1;r2;r3]
-        theta %[theta1;theta2]
+        theta %active joint degree with x axis [theta1;theta2]
         A1 %A1 coordinate [-r3; 0]
         A2 %A2 coordinate [r3; 0]
         B1 %B1 coordinate dependent on theta1
@@ -11,6 +11,8 @@ classdef RRRRR
         fk_nSol;  %forward kinematics solution number;
         fk_up;    %up-configuration coordinate[x;y]
         fk_down;  %down-configuration coordinate[x;y]
+        fk_up_theta; %up-configuration PB1&PB2 degree with axis x[theta3; theta4]
+        fk_down_theta; %down-configuration PB1&PB2 degree with axis x[theta3; theta4]
         current_configuration;     %-1 no solution; 0 down; 1 up
         initial_configuration;     % 0 down; 1 up
         current_position;          % end-point coordinate [x; y]
@@ -109,12 +111,14 @@ classdef RRRRR
             return;
         end
         
-        function [nSol, up, down] = forwardKinematics(fiveLinkage)
+        function [b1, b2, nSol, up, down, up_theta, down_theta] = forwardKinematics(fiveLinkage)
             %forward kinematics
             %input arguments:
             %               r: [r1; r2; r3] column vector
             %               theta: [theta1; theta2] column vector
             %return value:
+            %           b1: B1 point coordinate
+            %           b2: B2 point coordinate
             %           nSol: number of solutions.
             %           	-1: infinitely many solutions, B1 and B2 coincides
             %               0: no solution 1/2
@@ -122,10 +126,15 @@ classdef RRRRR
             %               2: up and down is different
             %           up: up-configuration end point coordinate [x;y]
             %           down: down-configuration end point coordinate [x;y]
+            %           up_theta: up-configuration [theta3; theta4]
+            %           down_theta: down-configuration [theta3; theta4]
             s1 = sind(fiveLinkage.theta(1));
             c1 = cosd(fiveLinkage.theta(1));
             s2 = sind(fiveLinkage.theta(2));
             c2 = cosd(fiveLinkage.theta(2));
+            
+            b1 = [fiveLinkage.r(1) * c1 - fiveLinkage.r(3); fiveLinkage.r(1) * s1];
+            b2 = [fiveLinkage.r(1) * c2 + fiveLinkage.r(3); fiveLinkage.r(1) * s2];
             
             denominator =  (2 * fiveLinkage.r(3) + fiveLinkage.r(1) * c2 - fiveLinkage.r(1) * c1);
             if (abs(denominator) < 1E-6)
@@ -133,6 +142,8 @@ classdef RRRRR
                 nSol = -1;
                 up = [];
                 down = [];
+                up_theta = [];
+                down_theta = [];
                 return;
             end
             
@@ -149,6 +160,8 @@ classdef RRRRR
                 nSol = 0;
                 up = [];
                 down = [];
+                up_theta = [];
+                down_theta = [];
                 return;
             end
             
@@ -158,6 +171,10 @@ classdef RRRRR
                 nSol = 1;
                 up = [x; y];
                 down = [x; y];
+                u = up - b1;
+                v = up - b2;
+                up_theta = [atan2d(u(2), u(1)); atan2d(v(2), v(1))];
+                down_theta = up_theta;
                 return;
             end
             
@@ -170,6 +187,12 @@ classdef RRRRR
             nSol = 2;
             up = [x1; y1];
             down = [x2; y2];
+            u = up - b1;
+            v = up - b2;
+            up_theta = [atan2d(u(2), u(1)); atan2d(v(2), v(1))];
+            u = down - b1;
+            v = down - b2;
+            down_theta = [atan2d(u(2), u(1)); atan2d(v(2), v(1))];
         end
         
         function [pp, pn, np, nn] = inverseKinematics(fiveLinkage, p)

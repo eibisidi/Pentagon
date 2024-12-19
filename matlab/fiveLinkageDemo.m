@@ -182,15 +182,13 @@ function handleEndPointChanged(p, mode)
     handleThetaChanged();
 end
 
-function results = handleThetaChanged()
+function handleThetaChanged()
     global fiveLinkage;
-    fiveLinkage.B1 = [fiveLinkage.r(1) * cosd(fiveLinkage.theta(1)) - fiveLinkage.r(3); fiveLinkage.r(1) * sind(fiveLinkage.theta(1))];
-    fiveLinkage.B2 = [fiveLinkage.r(1) * cosd(fiveLinkage.theta(2)) + fiveLinkage.r(3); fiveLinkage.r(1) * sind(fiveLinkage.theta(2))];
-    drawActiveLink();
 
     %do forward kinematics
-    [fiveLinkage.fk_nSol, fiveLinkage.fk_up, fiveLinkage.fk_down] = fiveLinkage.forwardKinematics();
-
+    [fiveLinkage.B1,fiveLinkage.B2, fiveLinkage.fk_nSol, fiveLinkage.fk_up, fiveLinkage.fk_down, fiveLinkage.fk_up_theta, fiveLinkage.fk_down_theta] = fiveLinkage.forwardKinematics();
+    drawActiveLink();
+    
     if (fiveLinkage.fk_nSol < 1)
         %no solution
         fiveLinkage.current_configuration = -1;
@@ -214,9 +212,7 @@ function results = handleThetaChanged()
     end
 
     drawPassiveLink();
-
     updateFkModeLabel();
-    results = 0;
 end
         
 function results = drawActiveLink()
