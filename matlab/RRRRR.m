@@ -96,20 +96,29 @@ classdef RRRRR
             end
             
             %compute B1 B2
-            B1 = [fiveLinkage.r(1) * cosd(ik_solution(1)) - fiveLinkage.r(3); fiveLinkage.r(1) * sind(ik_solution(1))];
-            B2 = [fiveLinkage.r(1) * cosd(ik_solution(2)) + fiveLinkage.r(3); fiveLinkage.r(1) * sind(ik_solution(2))];
-            p = fiveLinkage.current_position;
+%             B1 = [fiveLinkage.r(1) * cosd(ik_solution(1)) - fiveLinkage.r(3); fiveLinkage.r(1) * sind(ik_solution(1))];
+%             B2 = [fiveLinkage.r(1) * cosd(ik_solution(2)) + fiveLinkage.r(3); fiveLinkage.r(1) * sind(ik_solution(2))];
+            B1y = fiveLinkage.r(1) * sind(ik_solution(1));
+            B2y = fiveLinkage.r(1) * sind(ik_solution(2));
+            midY = (B1y + B2y) / 2;
+%             p = fiveLinkage.current_position;
+%             
+%             u = B1 - p; %u is the vector PB1
+%             v = B2 - p; %v is the vector PB2
+%             cross = u(1) * v(2) - u(2) * v(1);
+%             
+%             if (cross < -1E-6)
+%                 configuration = 0; %down
+%             else
+%                 configuration = 1;%up
+%             end
             
-            u = B1 - p; %u is the vector PB1
-            v = B2 - p; %v is the vector PB2
-            cross = u(1) * v(2) - u(2) * v(1);
-            
-            if (cross < -1E-6)
-                configuration = 0; %down
-            else
+            if (fiveLinkage.current_position(2) >= midY)
                 configuration = 1;%up
+            else
+                configuration = 0; %down
             end
-            
+
             return;
         end
     end

@@ -4,6 +4,7 @@ close all;
 global fiveLinkage;
 fiveLinkage = RRRRR;
 fiveLinkage.r = [1.2; 1.0; 0.8];
+%fiveLinkage.r = [1; 1; 0.4];  %lenth parameters of edcational robots
 fiveLinkage.theta = [0; 0];
 fiveLinkage.A1 = [-fiveLinkage.r(3); 0];
 fiveLinkage.A2 = [fiveLinkage.r(3); 0];
@@ -93,8 +94,8 @@ downModeLabel.Text = 'downMode';
 % Create ModeKnobLabel
 UIModeKnobLabel = uilabel(UIFigure);
 UIModeKnobLabel.HorizontalAlignment = 'center';
-UIModeKnobLabel.Position = [206 379 36 22];
-UIModeKnobLabel.Text = 'Mode';
+UIModeKnobLabel.Position = [190 390 60 22];
+UIModeKnobLabel.Text = 'WorkMode';
 
 % Create ModeKnob
 global UIModeKnob;
@@ -102,6 +103,7 @@ UIModeKnob = uiknob(UIFigure, 'discrete');
 UIModeKnob.Items = {'++', '+-', '-+', '--'};
 UIModeKnob.Position = [193 416 60 60];
 UIModeKnob.Value = '+-';
+UIModeKnob.ValueChangedFcn = @KnobValueChanged;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %draw singularity curve
@@ -117,33 +119,46 @@ fp_CCol.PickableParts = 'none';
 handleThetaChanged();
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%Functions
+%UI Callbacks
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function theta1SliderValueChanged(~, event)
-    global theta2Slider;
     global fiveLinkage;
-    fiveLinkage.theta = [event.Value; theta2Slider.Value;];
+    fiveLinkage.theta(1) = event.Value;
     handleThetaChanged();
 end
 
 function theta2SliderValueChanged(~, event)
-    global theta1Slider;
     global fiveLinkage;
-    fiveLinkage.theta = [ theta1Slider.Value; event.Value];
+    fiveLinkage.theta(2) = event.Value;
     handleThetaChanged();
 end
 
 function  AxesMouseClicked(Object, ~)
-    global fiveLinkage;
     global UIModeKnob;
-    global theta1Slider theta2Slider;
     
     cp = Object.CurrentPoint(1,:);
     p = [cp(1) ; cp(2)];
-    [fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] = inverseKinematics(fiveLinkage.r, p);
-    disp([fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] );
+    handleEndPointChanged(p, UIModeKnob.Value);
+end
 
-    switch UIModeKnob.Value
+function KnobValueChanged(~, event)
+    global fiveLinkage;
+    if (isempty(fiveLinkage.current_position))
+        return;
+    end
+    handleEndPointChanged(fiveLinkage.current_position, event.Value);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%Functions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function handleEndPointChanged(p, mode)
+    global fiveLinkage;
+    global theta1Slider theta2Slider;
+    [fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] = inverseKinematics(fiveLinkage.r, p);
+    %disp([fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] );
+
+    switch mode
     case '++'
         solution = fiveLinkage.ik_pp;
     case '+-'
@@ -153,7 +168,7 @@ function  AxesMouseClicked(Object, ~)
     otherwise
         solution = fiveLinkage.ik_nn;
     end
-    disp(solution);
+    
     if (isempty(solution)) %IK no solution
         return;
     end
@@ -162,8 +177,7 @@ function  AxesMouseClicked(Object, ~)
     theta2Slider.Value = solution(2);
     fiveLinkage.current_configuration = -1;
     fiveLinkage.current_position = p;
-    fiveLinkage.initial_configuration = fiveLinkage.getConfiguration(UIModeKnob.Value);
-    disp( fiveLinkage.initial_configuration);
+    fiveLinkage.initial_configuration = fiveLinkage.getConfiguration(mode);
     fiveLinkage.theta = solution;
     handleThetaChanged();
 end
@@ -261,7 +275,7 @@ function results = drawPassiveLink()
 end
 
 function  updateFkModeLabel()
-    global UpLabel upModeLabel DownLabel downModeLabel;
+    global UpLabel upModeLabel DownLabel downModeLabel UIModeKnob;
     global fiveLinkage;
 
     upModeLabel.Text = fiveLinkage.getWorkMode(1);
@@ -270,9 +284,11 @@ function  updateFkModeLabel()
     if (fiveLinkage.current_configuration == 1)
         UpLabel.BackgroundColor = [0.00,1.00,0.00];
         DownLabel.BackgroundColor = 'none';
+        UIModeKnob.Value = upModeLabel.Text;
     elseif (fiveLinkage.current_configuration == 0)
         UpLabel.BackgroundColor = 'none';
         DownLabel.BackgroundColor = [0.00,1.00,0.00];
+        UIModeKnob.Value = downModeLabel.Text;
     else
         UpLabel.BackgroundColor = 'none';
         DownLabel.BackgroundColor = 'none';
