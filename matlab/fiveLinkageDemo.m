@@ -11,11 +11,18 @@ fiveLinkage.A2 = [fiveLinkage.r(3); 0];
 fiveLinkage.current_configuration = -1;
 fiveLinkage.initial_configuration = 1;  %use up configuration when startup
 
-global h_a1b1 h_a2b2 h_b1c1b2 h_b1c2b2;
+%Rotation axis
+global L phi tooltip;
+L = 0.2;    %link length
+phi = 0;    %direction angle
+tooltip = [];
+
+global h_a1b1 h_a2b2 h_b1c1b2 h_b1c2b2 h_end_effector;
 h_a1b1 = []; %matlab plot handle of active link A1B1
 h_a2b2 = []; %matlab plot handle of active link A2B2
 h_b1c1b2 = []; %matlab plot handle of up-configuration
 h_b1c2b2 = []; %matlab plot handle of down-configuration
+h_end_effector = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %UI creation
@@ -25,6 +32,7 @@ UIFigure.Position = [100 100 310 600];
 UIFigure.Name = 'UI Figure';
 
 UIAxesFigure = figure;
+UIAxesFigure.Position = [420 100 600 500];
 global UIAxes;
 UIAxes = axes(UIAxesFigure);
 title(UIAxes, '5 linkage');
@@ -46,6 +54,7 @@ theta1Slider.Orientation = 'vertical';
 theta1Slider.ValueChangingFcn = @theta1SliderValueChanged;
 theta1Slider.ValueChangingFcn = @theta1SliderValueChanged;
 theta1Slider.Position = [22,9,3,571];
+theta1Slider.Value = fiveLinkage.theta(1);
 
 % Create theta2SliderLabel
 theta2SliderLabel = uilabel(UIFigure);
@@ -60,6 +69,7 @@ theta2Slider.Orientation = 'vertical';
 theta2Slider.ValueChangingFcn = @theta2SliderValueChanged;
 theta2Slider.ValueChangingFcn = @theta2SliderValueChanged;
 theta2Slider.Position = [97,9,3,571];
+theta1Slider.Value = fiveLinkage.theta(2);
 
 % Create ForwardKinematicsLabel
 ForwardKinematicsLabel = uilabel(UIFigure);
@@ -94,16 +104,31 @@ downModeLabel.Text = 'downMode';
 % Create ModeKnobLabel
 UIModeKnobLabel = uilabel(UIFigure);
 UIModeKnobLabel.HorizontalAlignment = 'center';
-UIModeKnobLabel.Position = [190 390 60 22];
+UIModeKnobLabel.Position = [199.5 407 63 22];
 UIModeKnobLabel.Text = 'WorkMode';
 
 % Create ModeKnob
 global UIModeKnob;
 UIModeKnob = uiknob(UIFigure, 'discrete');
 UIModeKnob.Items = {'++', '+-', '-+', '--'};
-UIModeKnob.Position = [193 416 60 60];
+UIModeKnob.Position = [200 444 60 60];
 UIModeKnob.Value = '+-';
 UIModeKnob.ValueChangedFcn = @KnobValueChanged;
+
+% Create phiSliderLabel
+phiSliderLabel = uilabel(UIFigure);
+phiSliderLabel.HorizontalAlignment = 'right';
+phiSliderLabel.Position = [212 357 25 22];
+phiSliderLabel.Text = 'phi';
+
+% Create phiSlider
+phiSlider = uislider(UIFigure);
+phiSlider.Limits = [-180 180];
+phiSlider.Orientation = 'vertical';
+phiSlider.Position = [212 142 3 216];
+phiSlider.Value = phi;
+phiSlider.ValueChangingFcn = @phiSliderValueChanged;
+phiSlider.ValueChangingFcn = @phiSliderValueChanged;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %draw singularity curve
@@ -133,28 +158,41 @@ function theta2SliderValueChanged(~, event)
     handleThetaChanged();
 end
 
+function phiSliderValueChanged(~, event)
+    global UIModeKnob;
+    global phi tooltip;
+    phi = event.Value;
+    handleEndPointChanged(tooltip, UIModeKnob.Value);
+end
+
 function  AxesMouseClicked(Object, ~)
     global UIModeKnob;
-    
     cp = Object.CurrentPoint(1,:);
     p = [cp(1) ; cp(2)];
     handleEndPointChanged(p, UIModeKnob.Value);
 end
 
 function KnobValueChanged(~, event)
-    global fiveLinkage;
-    if (isempty(fiveLinkage.current_position))
-        return;
-    end
-    handleEndPointChanged(fiveLinkage.current_position, event.Value);
+    global tooltip;
+    handleEndPointChanged(tooltip, event.Value);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function handleEndPointChanged(p, mode)
+function handleEndPointChanged(tooltip, mode)
+    %Input argument
+    %   tooltip: end-effector coordinate [x; y]
+    %   mode: work mode requireds
     global fiveLinkage;
     global theta1Slider theta2Slider;
+    global L phi;
+    p = tooltip;
+    if ( L > 0)
+        p(1) = tooltip(1) - L * cosd(phi);
+        p(2) = tooltip(2) - L * sind(phi);
+    end
+    
     [fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] = fiveLinkage.inverseKinematics(p);
     %disp([fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] );
 
@@ -211,7 +249,14 @@ function handleThetaChanged()
         fiveLinkage.current_position = fiveLinkage.fk_down;
     end
 
+    %update tooltip coordinate
+    global L phi tooltip;
+    endX = fiveLinkage.current_position(1) + L * cosd(phi);
+    endY = fiveLinkage.current_position(2) + L * sind(phi);
+    tooltip = [endX; endY];
+    
     drawPassiveLink();
+    drawEndEffector();
     updateFkModeLabel();
 end
         
@@ -268,6 +313,28 @@ function results = drawPassiveLink()
     end
 
     results = 0;                    
+end
+
+function drawEndEffector()
+    global L tooltip;
+    global fiveLinkage;
+    global h_end_effector;
+    global UIAxes;
+    
+    if (L <= 0)
+        return;
+    end
+    
+    if (~isempty(h_end_effector))    
+        delete(h_end_effector);
+    end
+    
+    if (isempty(fiveLinkage.current_position))
+        return;
+    end
+    
+    h_end_effector = plot(UIAxes, [fiveLinkage.current_position(1) tooltip(1)] , [fiveLinkage.current_position(2) tooltip(2)], '-cx');
+    h_end_effector.PickableParts = 'none';
 end
 
 function  updateFkModeLabel()
