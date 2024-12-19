@@ -155,7 +155,7 @@ end
 function handleEndPointChanged(p, mode)
     global fiveLinkage;
     global theta1Slider theta2Slider;
-    [fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] = inverseKinematics(fiveLinkage.r, p);
+    [fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] = fiveLinkage.inverseKinematics(p);
     %disp([fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] );
 
     switch mode
@@ -184,12 +184,12 @@ end
 
 function results = handleThetaChanged()
     global fiveLinkage;
-    fiveLinkage.b1 = [fiveLinkage.r(1) * cosd(fiveLinkage.theta(1)) - fiveLinkage.r(3); fiveLinkage.r(1) * sind(fiveLinkage.theta(1))];
-    fiveLinkage.b2 = [fiveLinkage.r(1) * cosd(fiveLinkage.theta(2)) + fiveLinkage.r(3); fiveLinkage.r(1) * sind(fiveLinkage.theta(2))];
+    fiveLinkage.B1 = [fiveLinkage.r(1) * cosd(fiveLinkage.theta(1)) - fiveLinkage.r(3); fiveLinkage.r(1) * sind(fiveLinkage.theta(1))];
+    fiveLinkage.B2 = [fiveLinkage.r(1) * cosd(fiveLinkage.theta(2)) + fiveLinkage.r(3); fiveLinkage.r(1) * sind(fiveLinkage.theta(2))];
     drawActiveLink();
 
     %do forward kinematics
-    [fiveLinkage.fk_nSol, fiveLinkage.fk_up, fiveLinkage.fk_down] = forwardKinematics(fiveLinkage.r, fiveLinkage.theta);
+    [fiveLinkage.fk_nSol, fiveLinkage.fk_up, fiveLinkage.fk_down] = fiveLinkage.forwardKinematics();
 
     if (fiveLinkage.fk_nSol < 1)
         %no solution
@@ -229,9 +229,9 @@ function results = drawActiveLink()
     if (~isempty(h_a2b2))
         delete(h_a2b2);
     end
-    h_a1b1 = plot(UIAxes, [fiveLinkage.A1(1) fiveLinkage.b1(1)] , [fiveLinkage.A1(2) fiveLinkage.b1(2)], '-go');
+    h_a1b1 = plot(UIAxes, [fiveLinkage.A1(1) fiveLinkage.B1(1)] , [fiveLinkage.A1(2) fiveLinkage.B1(2)], '-go');
     h_a1b1.PickableParts = 'none';
-    h_a2b2 = plot(UIAxes, [fiveLinkage.A2(1) fiveLinkage.b2(1)] , [fiveLinkage.A2(2) fiveLinkage.b2(2)], '-go');
+    h_a2b2 = plot(UIAxes, [fiveLinkage.A2(1) fiveLinkage.B2(1)] , [fiveLinkage.A2(2) fiveLinkage.B2(2)], '-go');
     h_a2b2.PickableParts = 'none';
     results = 0;
 end
@@ -263,11 +263,11 @@ function results = drawPassiveLink()
         downLineSpec = '-mo';
     end
 
-    h_b1c1b2 = plot(UIAxes, [fiveLinkage.b1(1) fiveLinkage.fk_up(1) fiveLinkage.b2(1)] , [fiveLinkage.b1(2) fiveLinkage.fk_up(2) fiveLinkage.b2(2)], upLineSpec);
+    h_b1c1b2 = plot(UIAxes, [fiveLinkage.B1(1) fiveLinkage.fk_up(1) fiveLinkage.B2(1)] , [fiveLinkage.B1(2) fiveLinkage.fk_up(2) fiveLinkage.B2(2)], upLineSpec);
     h_b1c1b2.PickableParts = 'none';
     
     if (fiveLinkage.fk_nSol == 2)
-        h_b1c2b2 = plot(UIAxes, [fiveLinkage.b1(1) fiveLinkage.fk_down(1) fiveLinkage.b2(1)] , [fiveLinkage.b1(2) fiveLinkage.fk_down(2) fiveLinkage.b2(2)], downLineSpec);
+        h_b1c2b2 = plot(UIAxes, [fiveLinkage.B1(1) fiveLinkage.fk_down(1) fiveLinkage.B2(1)] , [fiveLinkage.B1(2) fiveLinkage.fk_down(2) fiveLinkage.B2(2)], downLineSpec);
         h_b1c2b2.PickableParts = 'none';
     end
 
