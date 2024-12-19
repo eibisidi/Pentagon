@@ -142,7 +142,7 @@ function  AxesMouseClicked(Object, ~)
     p = [cp(1) ; cp(2)];
     [fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] = inverseKinematics(fiveLinkage.r, p);
     disp([fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] );
-    solution = [];
+
     switch UIModeKnob.Value
     case '++'
         solution = fiveLinkage.ik_pp;
@@ -154,12 +154,16 @@ function  AxesMouseClicked(Object, ~)
         solution = fiveLinkage.ik_nn;
     end
     disp(solution);
-    if (isempty(solution))
+    if (isempty(solution)) %IK no solution
         return;
     end
     
     theta1Slider.Value = solution(1);
     theta2Slider.Value = solution(2);
+    fiveLinkage.current_configuration = -1;
+    fiveLinkage.current_position = p;
+    fiveLinkage.initial_configuration = fiveLinkage.getConfiguration(UIModeKnob.Value);
+    disp( fiveLinkage.initial_configuration);
     fiveLinkage.theta = solution;
     handleThetaChanged();
 end
@@ -201,16 +205,6 @@ function results = handleThetaChanged()
     results = 0;
 end
         
-function crossChar = cross2char(crossValue)
-     if (crossValue < 1E-6)
-        crossChar = '-';
-     elseif (crossValue > 1E-6)
-        crossChar = '+';
-    else
-        crossChar = 'c';
-    end
-end
-
 function results = drawActiveLink()
     global h_a1b1 h_a2b2;
     global fiveLinkage;
@@ -266,44 +260,21 @@ function results = drawPassiveLink()
     results = 0;                    
 end
 
-function results = updateFkModeLabel()
+function  updateFkModeLabel()
     global UpLabel upModeLabel DownLabel downModeLabel;
     global fiveLinkage;
-    if (fiveLinkage.fk_nSol < 1 || fiveLinkage.current_configuration < 0)
-        upModeLabel.Text = 'xx';
-        downModeLabel.Text = 'xx';
-        UpLabel.BackgroundColor = 'none';
-        DownLabel.BackgroundColor = 'none';
-        return;
-    end
 
-    A1C1 = fiveLinkage.fk_up - fiveLinkage.A1; %vector A1P
-    A1B1 = fiveLinkage.b1 - fiveLinkage.A1;    %vector A1B1
-    leftCross = A1C1(1) * A1B1(2) - A1B1(1) * A1C1(2);
-
-    A2C1 = fiveLinkage.fk_up - fiveLinkage.A2;
-    A2B2 = fiveLinkage.b2 - fiveLinkage.A2;
-    rightCross = A2C1(1) * A2B2(2) - A2B2(1) * A2C1(2);
-
-    upModeLabel.Text = [cross2char(leftCross) , cross2char(rightCross)];
-
-    A1C2 = fiveLinkage.fk_down - fiveLinkage.A1; %vector A1P
-    A1B1 = fiveLinkage.b1 - fiveLinkage.A1;    %vector A1B1
-    leftCross = A1C2(1) * A1B1(2) - A1B1(1) * A1C2(2);
-
-    A2C2 = fiveLinkage.fk_down - fiveLinkage.A2;
-    A2B2 = fiveLinkage.b2 - fiveLinkage.A2;
-    rightCross = A2C2(1) * A2B2(2) - A2B2(1) * A2C2(2);
-
-    downModeLabel.Text = [cross2char(leftCross) , cross2char(rightCross)];
+    upModeLabel.Text = fiveLinkage.getWorkMode(1);
+    downModeLabel.Text = fiveLinkage.getWorkMode(0);
 
     if (fiveLinkage.current_configuration == 1)
         UpLabel.BackgroundColor = [0.00,1.00,0.00];
         DownLabel.BackgroundColor = 'none';
-    else
+    elseif (fiveLinkage.current_configuration == 0)
         UpLabel.BackgroundColor = 'none';
         DownLabel.BackgroundColor = [0.00,1.00,0.00];
-    end
-
-    results = 0;                    
+    else
+        UpLabel.BackgroundColor = 'none';
+        DownLabel.BackgroundColor = 'none';
+    end               
 end
