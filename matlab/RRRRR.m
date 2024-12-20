@@ -41,30 +41,9 @@ classdef RRRRR
         ik_B2;
         ik_passive_theta;  %passvie joint theta [pp pn np nn]
         ik_configuration;  %configuration [pp pn np nn]
-        %         fk_up;    %up-configuration coordinate[x;y]
-        %         fk_down;  %down-configuration coordinate[x;y]
-        %         fk_up_theta; %up-configuration PB1&PB2 degree with axis x[theta3; theta4]
-        %         fk_down_theta; %down-configuration PB1&PB2 degree with axis x[theta3; theta4]
-        %         current_configuration;     %-1 no solution; 0 down; 1 up
-        %         initial_configuration;     % 0 down; 1 up
-        %         current_position;          % end-point coordinate [x; y]
-        %         ik_pp; % ++mode [theta1; theta2]
-        %         ik_pn; % +-mode [theta1; theta2]
-        %         ik_np; % -+mode [theta1; theta2]
-        %         ik_nn; % --mode [theta1; theta2]
     end
     
     methods
-        function crossChar = cross2char(~, crossValue)
-            %Convert cross product value to '+' '-'
-            %Colinear situation is considered as '+'
-            if (crossValue < -1E-6)
-                crossChar = '-';
-            else
-                crossChar = '+';
-            end
-        end
-        
         function mode = string2mode(fiveLinkage, string)
             switch string
                 case '++'
@@ -80,8 +59,7 @@ classdef RRRRR
             end
         end
         
-        function modeStr = getWorkModeString(fiveLinkage, configuration)
-            mode = fiveLinkage.getWorkMode(configuration);
+        function modeStr = mode2string(fiveLinkage, mode)
             switch mode
                 case fiveLinkage.MODE_PP
                     modeStr = '++';
@@ -94,14 +72,19 @@ classdef RRRRR
                 otherwise
                     modeStr = 'xx';
             end
+        end
+        
+        function modeStr = getFKWorkModeString(fiveLinkage, configuration)
+            mode = fiveLinkage.getFKWorkMode(configuration);
+            modeStr = fiveLinkage.mode2string(mode);
             return;
         end
         
-        function mode = getWorkMode(fiveLinkage, configuration)
+        function mode = getFKWorkMode(fiveLinkage, configuration)
             %After forward kinematics, get work mode
             %input argument:
             %   fiveLinkage: RRRRR class object
-            %   configuration: 0 down ; 1 up
+            %   configuration: CONF_UP / CONF_DOWN
             %return
             %   mode:   'xx' no forward kinematics solution
             %           '++' '+-' '-+' '--' corresponding work mode of
@@ -116,50 +99,13 @@ classdef RRRRR
             return;
         end
         
-        function configuration = getConfiguration(fiveLinkage, mode)
-            %Get up/down configuration of specified mode base on current
-            %position
-            %input argument:
-            %   fiveLinkage: RRRRR object
-            %   mode: one of  '++' '+-' '-+' '--'
-            %return:
-            %   -1 no inverse kinematics solution
-            %   0 down-configuration
-            %   1 up-configuration
-            if (isempty(fiveLinkage.current_position))
-                configuration = -1;
-                return;
-            end
-            
-            switch mode
-                case '++'
-                    ik_solution = fiveLinkage.ik_pp;
-                case '+-'
-                    ik_solution = fiveLinkage.ik_pn;
-                case '-+'
-                    ik_solution = fiveLinkage.ik_np;
-                case '--'
-                    ik_solution = fiveLinkage.ik_nn;
-                otherwise
-                    ik_solution = [];
-            end
-            
-            if (isempty(ik_solution))
-                configuration = -1;
-                return;
-            end
-            
-            %compute B1 B2
-            B1y = fiveLinkage.r(1) * sind(ik_solution(1));
-            B2y = fiveLinkage.r(1) * sind(ik_solution(2));
-            midY = (B1y + B2y) / 2;
-            
-            if (fiveLinkage.current_position(2) >= midY)
-                configuration = 1;%up
-            else
-                configuration = 0; %down
-            end
-            
+        function mode = getCurrentWorkMode(fiveLinkage)
+            mode = calcWorkMode(fiveLinkage, fiveLinkage.B1, fiveLinkage.B2, fiveLinkage.P);
+            return;
+        end
+        
+        function conf = getCurrentConfiguration(fiveLinkage)
+            conf = fiveLinkage. calcConfiguration(fiveLinkage.B1, fiveLinkage.B2, fiveLinkage.P);
             return;
         end
         

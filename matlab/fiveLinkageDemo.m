@@ -13,13 +13,10 @@ fiveLinkage.initial_configuration = fiveLinkage.CONF_UP;  %use up configuration 
 
 %Rotation axis
 global L phi tooltip thetaR;
-L = 0.2;    %link length
+L = 0;    %link length
 phi = 0;    %direction angle wrt. x axis
 tooltip = []; %tooltip coordinate [x;y]
 thetaR = 0;      %R joint roation angle
-
-global steps;
-steps = 0;
 
 global h_a1b1 h_a2b2 h_b1c1b2 h_b1c2b2 h_end_effector;
 h_a1b1 = []; %matlab plot handle of active link A1B1
@@ -134,6 +131,16 @@ phiSlider.Value = phi;
 phiSlider.ValueChangingFcn = @phiSliderValueChanged;
 phiSlider.ValueChangingFcn = @phiSliderValueChanged;
 
+StepsSliderLabel = uilabel(UIFigure);
+StepsSliderLabel.HorizontalAlignment = 'right';
+StepsSliderLabel.Position = [168 98 36 22];
+StepsSliderLabel.Text = 'Steps';
+
+global StepsSlider;
+% Create StepsSlider
+StepsSlider = uislider(UIFigure);
+StepsSlider.Position = [153 97 142 3];
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %draw singularity curve
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -166,28 +173,89 @@ function phiSliderValueChanged(~, event)
     global UIModeKnob;
     global phi tooltip;
     phi = event.Value;
-    handleEndPointChanged(tooltip, UIModeKnob.Value);
+    handleToolTipChanged(tooltip, UIModeKnob.Value);
 end
 
 function  AxesMouseClicked(Object, ~)
     global UIModeKnob;
-    global steps;
+    global fiveLinkage;
+    global L phi thetaR;
+    global StepsSlider;
+    steps = StepsSlider.Value;
+    
     cp = Object.CurrentPoint(1,:);
-    endEffector = [cp(1) ; cp(2)];
+    newToolTip = [cp(1) ; cp(2)];
     if (steps == 0)
-        handleEndPointChanged(endEffector, UIModeKnob.Value);
+        handleToolTipChanged(newToolTip, UIModeKnob.Value);
         return;
     end
     
-    global fiveLinkage;
-    global L phi R;
-    startJoint = [fiveLinkage.theta(1); fiveLinkage.theta(2); R];
+    %continous
+    newP = getEndPoint(newToolTip);
+
+    startMode = fiveLinkage.getCurrentWorkMode();
+    startConf = fiveLinkage.getCurrentConfiguration();
+    startJoint = [fiveLinkage.theta(1); fiveLinkage.theta(2); phi - fiveLinkage.passive_theta(1)];
     
-    p = endEffector;
-    if ( L > 0)
-        p(1) = endEffector(1) - L * cosd(phi);
-        p(2) = endEffector(2) - L * sind(phi);
+    fiveLinkage = fiveLinkage.inverseKinematics(newP);
+    if (fiveLinkage.ik_nSol < 4)
+        return;
     end
+
+    ik_theta = fiveLinkage.ik_theta(:, startMode);
+    ik_passive_theta = fiveLinkage.ik_passive_theta(:, startMode);
+    endJoint = [ik_theta(1); ik_theta(2); phi - ik_passive_theta(1)];
+    
+    deltaJoint = endJoint - startJoint;
+    if (deltaJoint(1) * deltaJoint(2) < 0)
+        disp('failed to process ');
+        return
+    end
+    
+    disp(deltaJoint);
+    
+    base = 1;
+    distance = deltaJoint(1);
+    if ( abs(deltaJoint(2)) < abs(deltaJoint(1)))
+        base = 2;
+        distance = deltaJoint(2);
+    end
+    
+    for i = 1:1:steps
+        ratio = i / steps;
+        add = ratio * distance;
+        t1 = startJoint(1) + add;
+        t2 = startJoint(2) + add;
+        handleThetaChanged(t1, t2, thetaR);
+        pause(0.1);
+    end
+    
+    if (base == 1)
+        remainDelta = endJoint(2) - t2;
+        mid = t2;
+    else
+        remainDelta = endJoint(1) - t1;
+        mid = t1;
+    end
+    
+    disp(remainDelta);
+    remainSteps = ceil(abs(remainDelta / distance) * steps);
+    disp(remainSteps);
+    
+    for i = 1:1:remainSteps
+        ratio = i / remainSteps;
+        if (base == 1)
+            t2 = mid + ratio * remainDelta;
+        else
+            t1 = mid + ratio * remainDelta;
+        end
+        handleThetaChanged(t1, t2, thetaR);
+        pause(0.1);
+    end
+    
+    handleToolTipChanged(newToolTip, UIModeKnob.Value);
+    return;
+    
     [fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] = fiveLinkage.inverseKinematics(p);
     %disp([fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] );
 
@@ -232,26 +300,34 @@ end
 
 function KnobValueChanged(~, event)
     global tooltip;
-    handleEndPointChanged(tooltip, event.Value);
+    handleToolTipChanged(tooltip, event.Value);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %Functions
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function handleEndPointChanged(newToolTip, mode)
-    %Input argument
-    %   tooltip: end-effector coordinate [x; y]
-    %   mode: work mode requireds
-    global fiveLinkage;
-    global theta1Slider theta2Slider;
-    global L phi thetaR;
+function p = getEndPoint(newToolTip)
+    global L phi ;
     p = newToolTip;
     if ( L > 0)
         p(1) = newToolTip(1) - L * cosd(phi);
         p(2) = newToolTip(2) - L * sind(phi);
     end
+end
+
+function handleToolTipChanged(newToolTip, mode)
+    %Input argument
+    %   tooltip: end-effector coordinate [x; y]
+    %   mode: work mode requireds
+    global fiveLinkage;
+    global theta1Slider theta2Slider;
+    global thetaR;
+    p = getEndPoint(newToolTip);
     
     fiveLinkage = fiveLinkage.setP(p, mode);
+    if (fiveLinkage.ik_nSol < 4)
+        return;
+    end
     
     theta1Slider.Value = fiveLinkage.theta(1);
     theta2Slider.Value = fiveLinkage.theta(2);
@@ -360,8 +436,8 @@ function  updateFkModeLabel()
     global UpLabel upModeLabel DownLabel downModeLabel UIModeKnob;
     global fiveLinkage;
 
-    upModeLabel.Text = fiveLinkage.getWorkModeString(fiveLinkage.CONF_UP);
-    downModeLabel.Text = fiveLinkage.getWorkModeString(fiveLinkage.CONF_DOWN);
+    upModeLabel.Text = fiveLinkage.getFKWorkModeString(fiveLinkage.CONF_UP);
+    downModeLabel.Text = fiveLinkage.getFKWorkModeString(fiveLinkage.CONF_DOWN);
 
     if (fiveLinkage.current_configuration == fiveLinkage.CONF_UP)
         UpLabel.BackgroundColor = [0.00,1.00,0.00];
