@@ -179,6 +179,24 @@ function phiSliderValueChanged(~, event)
     handleToolTipChanged(tooltip, UIModeKnob.Value);
 end
 
+function endJoint = calcEndJoint(startDeg, endDeg)
+    dim = size(startDeg, 1);
+    endJoint = zeros(dim, 1);
+    
+    for i = 1:dim
+        if (endDeg(i) - startDeg(i) > 180)
+            rc = -1;
+        elseif (endDeg(i) - startDeg(i) < -180)
+            rc = 1;
+        else
+            rc = 0;
+        end
+
+        endJoint(i) = endDeg(i) + rc * 360;
+    end
+    return;
+end
+
 function  AxesMouseClicked(Object, ~)
     global UIModeKnob;
     global fiveLinkage;
@@ -189,118 +207,42 @@ function  AxesMouseClicked(Object, ~)
     cp = Object.CurrentPoint(1,:);
     newToolTip = [cp(1) ; cp(2)];
     
-    disp(newToolTip);
+    %disp(newToolTip);
     if (steps == 0)
         handleToolTipChanged(newToolTip, UIModeKnob.Value);
         return;
     end
     
-    %continous
+    %continous movement
     newP = getEndPoint(newToolTip);
 
     startMode = fiveLinkage.getCurrentWorkMode();
     startConf = fiveLinkage.getCurrentConfiguration();
-    startJoint = [fiveLinkage.theta(1); fiveLinkage.theta(2); phi - fiveLinkage.passive_theta(1)];
+    startDegree = [fiveLinkage.theta(1); fiveLinkage.theta(2); phi - fiveLinkage.passive_theta(1)];
     
     fiveLinkage = fiveLinkage.inverseKinematics(newP);
     if (fiveLinkage.ik_nSol < 4)
         return;
     end
 
-    ik_theta = fiveLinkage.ik_theta(:, startMode);
+    ik_theta = fiveLinkage.ik_theta(:, startMode); %keep workmode 
     ik_passive_theta = fiveLinkage.ik_passive_theta(:, startMode);
-    endJoint = [ik_theta(1); ik_theta(2); phi - ik_passive_theta(1)];
+    endDegree = [ik_theta(1); ik_theta(2); phi - ik_passive_theta(1)];
     
+    startJoint = startDegree;
+    endJoint = calcEndJoint(startDegree, endDegree);
     deltaJoint = endJoint - startJoint;
-    if (deltaJoint(1) * deltaJoint(2) < 0)
-        disp('failed to process ');
-        return
-    end
-    
-    disp(deltaJoint);
-    
-    base = 1;
-    distance = deltaJoint(1);
-    if ( abs(deltaJoint(2)) < abs(deltaJoint(1)))
-        base = 2;
-        distance = deltaJoint(2);
-    end
     
     for i = 1:1:steps
         ratio = i / steps;
-        add = ratio * distance;
-        t1 = startJoint(1) + add;
-        t2 = startJoint(2) + add;
+        t1 = startJoint(1) + ratio * deltaJoint(1);
+        t2 = startJoint(2) + ratio * deltaJoint(2);
         handleThetaChanged(t1, t2, thetaR);
-        pause(0.1);
+        pause(0.01);
     end
     
-    if (base == 1)
-        remainDelta = endJoint(2) - t2;
-        mid = t2;
-    else
-        remainDelta = endJoint(1) - t1;
-        mid = t1;
-    end
-    
-    %disp(remainDelta);
-    remainSteps = ceil(abs(remainDelta / distance) * steps);
-    %disp(remainSteps);
-    
-    for i = 1:1:remainSteps
-        ratio = i / remainSteps;
-        if (base == 1)
-            t2 = mid + ratio * remainDelta;
-        else
-            t1 = mid + ratio * remainDelta;
-        end
-        handleThetaChanged(t1, t2, thetaR);
-        pause(0.1);
-    end
-    
-    handleToolTipChanged(newToolTip, UIModeKnob.Value);
-    return;
-    
-    [fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] = fiveLinkage.inverseKinematics(p);
-    %disp([fiveLinkage.ik_pp, fiveLinkage.ik_pn, fiveLinkage.ik_np, fiveLinkage.ik_nn] );
-
-    switch  UIModeKnob.Value
-    case '++'
-        solution = fiveLinkage.ik_pp;
-    case '+-'
-        solution = fiveLinkage.ik_pn;
-    case '-+'
-        solution = fiveLinkage.ik_np;
-    otherwise
-        solution = fiveLinkage.ik_nn;
-    end
-    
-    if (isempty(solution)) %IK no solution
-        return;
-    end
-    
-    fiveLinkage.current_position = p;
-    fiveLinkage.current_configuration = fiveLinkage.getConfiguration( UIModeKnob.Value);
-	fiveLinkage.theta = solution;
-    [fiveLinkage.B1,fiveLinkage.B2, fiveLinkage.fk_nSol, fiveLinkage.fk_up, fiveLinkage.fk_down, fiveLinkage.fk_up_theta, fiveLinkage.fk_down_theta] = fiveLinkage.forwardKinematics();
-    
-    if (fiveLinkage.current_configuration == 1)
-        rotation = phi - fiveLinkage.fk_up_theta(1);
-    else
-        rotation = phi - fiveLinkage.fk_down_theta(1);
-    end
-    endJoint = [solution(1);solution(2); rotation];
-    
-    distance = endJoint - startJoint;
-    for i = 1:1:steps
-        disp(i);
-        ratio = i / steps;
-        t1 = startJoint(1) + ratio * distance(1);
-        t2 = startJoint(2) + ratio * distance(2);
-        fiveLinkage.theta = [t1; t2];
-        handleThetaChanged();
-        pause(0.1);
-    end
+	handleToolTipChanged(newToolTip, UIModeKnob.Value);
+    return;    
 end
 
 function KnobValueChanged(~, event)
@@ -333,6 +275,8 @@ function handleToolTipChanged(newToolTip, mode)
     if (fiveLinkage.ik_nSol < 4)
         return;
     end
+    
+    %disp(fiveLinkage.theta);
     
     theta1Slider.Value = fiveLinkage.theta(1);
     theta2Slider.Value = fiveLinkage.theta(2);
