@@ -3,7 +3,10 @@ close all;
 
 global fiveLinkage;
 fiveLinkage = RRRRR;
-fiveLinkage.r = [1.2; 1.0; 0.8];
+% R = [0.21; 0.32; 0.1];
+% D = sum(R);
+% fiveLinkage.r = R / D;        %non-dimensional 
+fiveLinkage.r = 1.4*[0.21; 0.32; 0.1];
 %fiveLinkage.r = [1; 1; 0.4];  %lenth parameters of edcational robots
 fiveLinkage.theta = [0; 0];
 fiveLinkage.A1 = [-fiveLinkage.r(3); 0];
@@ -185,6 +188,8 @@ function  AxesMouseClicked(Object, ~)
     
     cp = Object.CurrentPoint(1,:);
     newToolTip = [cp(1) ; cp(2)];
+    
+    disp(newToolTip);
     if (steps == 0)
         handleToolTipChanged(newToolTip, UIModeKnob.Value);
         return;
@@ -238,9 +243,9 @@ function  AxesMouseClicked(Object, ~)
         mid = t1;
     end
     
-    disp(remainDelta);
+    %disp(remainDelta);
     remainSteps = ceil(abs(remainDelta / distance) * steps);
-    disp(remainSteps);
+    %disp(remainSteps);
     
     for i = 1:1:remainSteps
         ratio = i / remainSteps;
