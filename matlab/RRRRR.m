@@ -253,12 +253,11 @@ classdef RRRRR
             %inverse kinematics
             %input arguments:
             %               fiveLinkage: RRRRR object
-            %               p: end point coordinate
+            %               newP: end point coordinate
             %return value:
-            %               pp: '++' mode [theta1; theat2]
-            %               pn: '+-' mode [theta1; theat2]
-            %               np: '-+' mode [theta1; theat2]
-            %               nn: '--' mode [theta1; theat2]
+            %               fiveLinkage.ik_nSol: solution number 0/4
+            %               fiveLinkage.ik_theta: theta in [0, 360)
+            %               in [-180, 180) arranged in the form of [pp, pn, np, nn]
             r1 = fiveLinkage.r(1);
             r2 = fiveLinkage.r(2);
             r3 = fiveLinkage.r(3);
@@ -300,7 +299,7 @@ classdef RRRRR
             %sigma1 = 1
             Y = -b1 + sqrt(det1);
             X = 2 * a1;
-            theta1 = wrapTo180(2 * atan2d(Y, X));
+            theta1 = wrapTo180(2 * atan2d(Y, X)); 
             pp(1) = theta1;
             pn(1) = theta1;
             
@@ -314,7 +313,7 @@ classdef RRRRR
             %sigma2 = 1
             Y = -b2 + sqrt(det2);
             X = 2 * a2;
-            theta2 = wrapTo180(2 * atan2d(Y, X));
+            theta2 = wrapTo180(2 * atan2d(Y, X)); 
             pp(2) = theta2;
             np(2) = theta2;
             
@@ -350,6 +349,7 @@ classdef RRRRR
         end
         
         function fiveLinkage = setTheta(fiveLinkage, newTheta)
+            %set theta1 theta2 value, and update current end point state
             fiveLinkage = fiveLinkage.forwardKinematics(newTheta);
             fiveLinkage.theta = newTheta;
             fiveLinkage.B1 = fiveLinkage.fk_B1;
@@ -389,6 +389,7 @@ classdef RRRRR
         end
         
         function fiveLinkage = setP(fiveLinkage, newP, modeString)
+            %set end point coordinate, and update current end point state
             fiveLinkage = fiveLinkage.inverseKinematics(newP);
             if (fiveLinkage.ik_nSol < 4)
                 return;

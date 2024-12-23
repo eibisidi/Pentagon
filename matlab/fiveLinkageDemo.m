@@ -229,8 +229,21 @@ function  AxesMouseClicked(Object, ~)
     ik_passive_theta = fiveLinkage.ik_passive_theta(:, startMode);
     endDegree = [ik_theta(1); ik_theta(2); phi - ik_passive_theta(1)];
     
-    startJoint = startDegree;
-    endJoint = calcEndJoint(startDegree, endDegree);
+    switch UIModeKnob.Value
+        case '++'
+            startJoint = [wrapTo360(startDegree(1)); wrapTo360(startDegree(2)); startDegree(3)];
+            endJoint   = [wrapTo360(endDegree(1)); wrapTo360(endDegree(2)); endDegree(3)];
+        case '+-'
+            startJoint = [wrapTo360(startDegree(1)); wrapTo180(startDegree(2)); startDegree(3)];
+            endJoint   = [wrapTo360(endDegree(1)); wrapTo180(endDegree(2)); endDegree(3)];
+        case '-+'
+            startJoint = [wrapTo180(startDegree(1)); wrapTo360(startDegree(2)); startDegree(3)];
+            endJoint   = [wrapTo180(endDegree(1)); wrapTo360(endDegree(2)); endDegree(3)];
+        case '--'
+            startJoint = [wrapTo180(startDegree(1)); wrapTo180(startDegree(2)); startDegree(3)];
+            endJoint   = [wrapTo180(endDegree(1)); wrapTo180(endDegree(2)); endDegree(3)];
+    end
+    
     deltaJoint = endJoint - startJoint;
     
     for i = 1:1:steps
