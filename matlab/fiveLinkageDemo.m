@@ -6,13 +6,19 @@ fiveLinkage = RRRRR;
 % R = [0.21; 0.32; 0.1];
 % D = sum(R);
 % fiveLinkage.r = R / D;        %non-dimensional 
-fiveLinkage.r = 1.4*[0.21; 0.32; 0.1];
+fiveLinkage.r = [0.21; 0.32; 0.1];
+%fiveLinkage.r = [0.2; 0.26; 0.085/2];  %RP-5AH
 %fiveLinkage.r = [1; 1; 0.4];  %lenth parameters of edcational robots
 fiveLinkage.theta = [0; 0];
 fiveLinkage.A1 = [-fiveLinkage.r(3); 0];
 fiveLinkage.A2 = [fiveLinkage.r(3); 0];
 fiveLinkage.current_configuration = fiveLinkage.CONF_NONE;
 fiveLinkage.initial_configuration = fiveLinkage.CONF_UP;  %use up configuration when startup
+
+[range1, range2] = calcJointRange(fiveLinkage.r);
+
+disp(range1);
+disp(range2);
 
 %Rotation axis
 global L phi tooltip thetaR;
@@ -373,14 +379,10 @@ function drawPassiveLink()
 end
 
 function drawEndEffector()
-    global L tooltip;
+    global L tooltip phi;
     global fiveLinkage;
     global h_end_effector;
     global UIAxes;
-    
-    if (L <= 0)
-        return;
-    end
     
     if (~isempty(h_end_effector))    
         delete(h_end_effector);
@@ -390,7 +392,16 @@ function drawEndEffector()
         return;
     end
     
-    h_end_effector = plot(UIAxes, [fiveLinkage.P(1) tooltip(1)] , [fiveLinkage.P(2) tooltip(2)], '-cx');
+    if (L <= 0)
+        tmpL = 0.1;
+        endX = fiveLinkage.P(1) + tmpL * cosd(phi);
+        endY = fiveLinkage.P(2) + tmpL * sind(phi);
+        startX = fiveLinkage.P(1) - tmpL * cosd(phi);
+        startY = fiveLinkage.P(2) - tmpL * sind(phi);
+        h_end_effector = plot(UIAxes, [startX endX] , [startY endY], '-cx');
+    else
+        h_end_effector = plot(UIAxes, [fiveLinkage.P(1) tooltip(1)] , [fiveLinkage.P(2) tooltip(2)], '-cx');
+    end
     h_end_effector.PickableParts = 'none';
 end
 
@@ -413,4 +424,15 @@ function  updateFkModeLabel()
         UpLabel.BackgroundColor = 'none';
         DownLabel.BackgroundColor = 'none';
     end               
+end
+
+function [range1, range2] = calcJointRange(r)
+    r1 = r(1);
+    r2 = r(2);
+    r3 = r(3);
+    d = r1 + r2 - 2*r3;
+    cosine = (r1^2 + d^2 - r2^2)/(2 * r1 *d);
+    t = acosd(cosine);
+    range1 = [0; 180 + t];
+    range2 = [-t; 180];
 end
