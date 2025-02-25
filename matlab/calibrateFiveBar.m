@@ -1,6 +1,6 @@
 syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 X0 Y0 ALPHA;
 syms T1 T2;
-simulation = 0;
+simulation = 1;
 skew = [ 0 -1; 1 0];
 rotation = [cos(GAMA) -sin(GAMA); sin(GAMA) cos(GAMA)];
 rOB1 = [L11 * cos(T1 + DELTA1) - D / 2; L11 * sin(T1 + DELTA1)];
@@ -17,23 +17,6 @@ pE = [X0 + xBF * cos(ALPHA) - yBF * sin(ALPHA); Y0 + xBF * sin(ALPHA) + yBF * co
 xWF = pE(1);
 yWF = pE(2);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                L11   L12  L21  L22   D   L23 GAMA DELTA1 DELTA2 X0 Y0 ALPHA
-%vnom = [270; 370; 270; 370; 200; 370; 0; 0; 0; 0; 0; 0];
-%vactual = vnom;
-%vactual = vnom + [0.1; 0.07; 0.2; 0.11; 0.15; 3; deg2rad(4.1); deg2rad(1.5); deg2rad(2.7); 4; 7; deg2rad(3.5)];
-%vactual = vnom + [0.15; 0.21; 0.13; 0.23; 0.22; 7; deg2rad(4.1); deg2rad(6.5); deg2rad(2.7); 4; 7; deg2rad(3.5)];
-%vactual = vnom + [0.1; 0.3; 0.2; 0.4; 0.15; 3; deg2rad(4.1); 0; 0; 0 ; 0; 0];
-%vactual = vnom + [0.1; 0.3; 0.2; 0.4; 0.15; 3; deg2rad(4.1); deg2rad(1.5); deg2rad(2.7); 4; 7; deg2rad(3.5)];
-%Bad calibration configurations
-% means = [60; 348.617;
-%          40; 348.617;
-%          20; 348.617;
-%          0; 348.617;
-%          -20; 348.617;
-%          -40; 348.617;
-%          -60; 348.617;];
-
 means = [60; 348.617 + 10;
     40; 348.617 ;
     20; 348.617 + 10;
@@ -45,7 +28,7 @@ means = [60; 348.617 + 10;
 
 phis = [];
 n = size(means, 1) / 2;
-vnom = [270; 370; 270; 370; 200; 370; 0; 0; 0; 0; -348; 0];
+vnom = [270; 370; 270; 370; 200; 370; 0; 0; 0; 0; -348.617; 0];
 u = [548.66,  1042.6,   550.09, 1046.82, 1049.9  ,   550.97, 1055.72 ,  547.55];
 v = [6619.62, 7618.86,  8616.6, 9615.15, 10614.57, 11612.62, 12612.92, 13616.02];
 
@@ -54,6 +37,9 @@ for i = 1 : n
     phi = ik_sym(pBase, vnom);
     phis = [phis, phi];
 end
+
+disp(rad2deg(phis));
+return;
 
 if simulation == 1
     vactual = vnom + [0.15; 0.21; 0.13; 0.23; 0.22; 7; deg2rad(4.1); deg2rad(6.5); deg2rad(-2.7); 4.3; 7; deg2rad(2.5)];
