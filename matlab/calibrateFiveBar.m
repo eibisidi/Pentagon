@@ -1,6 +1,6 @@
 syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 X0 Y0 ALPHA;
 syms T1 T2;
-simulation = 1;
+simulation = 0;
 skew = [ 0 -1; 1 0];
 rotation = [cos(GAMA) -sin(GAMA); sin(GAMA) cos(GAMA)];
 rOB1 = [L11 * cos(T1 + DELTA1) - D / 2; L11 * sin(T1 + DELTA1)];
@@ -35,37 +35,60 @@ yWF = pE(2);
 %          -60; 348.617;];
 
 means = [60; 348.617 + 10;
-         40; 348.617 ;
-         20; 348.617 + 10;
-         0; 348.617;
-         -20; 348.617 + 10;
-         -40; 348.617;
-         -60; 348.617 + 10;];
+    40; 348.617 ;
+    20; 348.617 + 10;
+    0; 348.617; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    -20; 348.617;
+    -40; 348.617 + 10;
+    -60; 348.617;
+    -80; 348.617 + 10];
 
 phis = [];
 n = size(means, 1) / 2;
+vnom = [270; 370; 270; 370; 200; 370; 0; 0; 0; 0; -348; 0];
+u = [548.66,  1042.6,   550.09, 1046.82, 1049.9  ,   550.97, 1055.72 ,  547.55];
+v = [6619.62, 7618.86,  8616.6, 9615.15, 10614.57, 11612.62, 12612.92, 13616.02];
+
+for i = 1 : n
+    pBase = [means(2*i - 1);means(2*i)];
+    phi = ik_sym(pBase, vnom);
+    phis = [phis, phi];
+end
+
 if simulation == 1
-vnom = [270; 370; 270; 370; 200; 370; 0; 0; 0; 0; 0; 0];
-vactual = vnom + [0.15; 0.21; 0.13; 0.23; 0.22; 7; deg2rad(4.1); deg2rad(6.5); deg2rad(2.7); 4; 7; deg2rad(3.5)];
-
-for i = 1 : n
-    position = [means(2*i - 1);means(2*i)];
-    phi = ik_sym(position, vnom);
-    phis = [phis, phi];
-    [xtmp, ytmp] = fk_sym(vactual, [phi(1); phi(2)]);
-    means(2*i-1) = xtmp;
-    means(2*i) = ytmp;
-end
-else
-for i = 1 : n
-    position = [means(2*i - 1);means(2*i)];
-    phi = ik_sym(position, vnom);
-    phis = [phis, phi];
-
-end    
+    vactual = vnom + [0.15; 0.21; 0.13; 0.23; 0.22; 7; deg2rad(4.1); deg2rad(6.5); deg2rad(-2.7); 4.3; 7; deg2rad(2.5)];
+    
+    for i = 1 : n
+        [xtmp, ytmp] = fk_sym(vactual, [phis(1, i); phis(2, i)]);
+        [xWorldTmp, yWorldTmp] = base2world(vactual, [xtmp, ytmp]);
+         means(2*i-1) = xWorldTmp;
+         means(2*i) = yWorldTmp;
+        
+        if (i ~= 4)
+            v(i) = v(4) - 50 * xWorldTmp;
+            u(i) = u(4) - 50 * yWorldTmp;
+        end
+    end
 end
 
+%{u,v} -> means
+counter = 0;
+tmpphis = zeros(2, n - 1);
+means = zeros(2*n - 2, 1);
+ for i = 1 : n
+     if (i ~= 4)
+        counter = counter + 1;
+        xWorld = -(v(i) - v(4)) / 50;
+        yWorld = -(u(i) - u(4)) / 50;
+        means(2*counter-1) = xWorld;
+        means(2*counter) = yWorld;
+        tmpphis (2 *counter - 1) = phis(2 * i - 1);
+        tmpphis(2*counter) = phis(2 * i);
+     end
+ end
 
+phis = tmpphis;
+n = size(means, 1) / 2;
 est = zeros(size(means));
 m = size(vnom, 1);
 
@@ -81,8 +104,9 @@ for i = 1:6
         J(2*k-1,:) = Jk(1,:);
         J(2*k,:) = Jk(2,:);
         [xtmp, ytmp] = fk_sym(vreal, [phis(1, k); phis(2, k)]);
-        est(2*k-1) = xtmp;
-        est(2*k) = ytmp;
+        [xWorldTmp, yWorldTmp] = base2world(vreal, [xtmp, ytmp]);
+        est(2*k-1) = xWorldTmp;
+        est(2*k) = yWorldTmp;
     end
     
     %do column scaling
@@ -106,6 +130,9 @@ for i = 1:6
         break;
     end
 end
-disp(vactual');
 disp(vreal');
+
+if simulation == 1
+disp(vactual');
 disp((vreal - vactual)');
+end
