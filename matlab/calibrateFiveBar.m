@@ -1,6 +1,9 @@
+function [difference] = calibrateFiveBar()
 syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 X0 Y0 ALPHA;
 syms T1 T2;
 simulation = 1;
+ybaseline = 200;
+y0 = 200;
 skew = [ 0 -1; 1 0];
 rotation = [cos(GAMA) -sin(GAMA); sin(GAMA) cos(GAMA)];
 rOB1 = [L11 * cos(T1 + DELTA1) - D / 2; L11 * sin(T1 + DELTA1)];
@@ -17,25 +20,52 @@ pE = [X0 + xBF * cos(ALPHA) - yBF * sin(ALPHA); Y0 + xBF * sin(ALPHA) + yBF * co
 xWF = pE(1);
 yWF = pE(2);
 
-means = [60; 348.617 + 10;
-    40; 348.617 ;
-    20; 348.617 + 10;
-    0; 348.617; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    -20; 348.617;
-    -40; 348.617 + 10;
-    -60; 348.617;
-    -80; 348.617 + 10];
+means=[];
+counter = 0;
+neutral = 0;
+plotX = [];
+plotY = [];
+for i = 260:-20:-260
+    counter = counter + 1;
+    ytmp = ybaseline + mod(counter, 6) * 50;
+    if (i == 0)
+        neutral = counter;
+        y0 = ytmp;
+    end
+
+    plotX = [plotX; i];
+    plotY = [plotY; ytmp];
+    means = [means; i];
+    means = [means; ytmp];
+end
+
+plot(plotX, plotY);
+
+% means = [60; 348.617 + 10;
+%     40; 348.617 ;
+%     20; 348.617 + 10;
+%     0; 348.617; %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     -20; 348.617;
+%     -40; 348.617 + 10;
+%     -60; 348.617;
+%     -80; 348.617 + 10];
 
 phis = [];
 n = size(means, 1) / 2;
-neutral = (n) / 2;
-vnom = [270; 370; 270; 370; 200; 370; 0; 0; 0; 0; -348.617; 0];
+
+vnom = [270; 370; 270; 370; 200; 370; 0; 0; 0; 0; -y0; 0];
+
+if simulation == 1
+    u = zeros(1, n);
+    v = zeros(1, n);
+else
 u1 = [546.11,   1040.5,     548         1044.4  1048    549.17      1053.65     545.59];
 u2 = [546.11,   1040.52,    547.98      1044.43 1047.96 549.2       1053.64     545.6];
 v1 = [2122.87,  3124.33,    4123.45     5123.56 6124.74 7122.86     8125.27     9128.57];
 v2 = [2122.86,  3124.32,    4123.5      5123.56 6124.78 7122.84     8125.29     9128.58];
 u = (u1 + u2) /2;
 v = (v1 + v2) /2;
+end
 
 for i = 1 : n
     pBase = [means(2*i - 1);means(2*i)];
@@ -48,6 +78,7 @@ if simulation == 1
     upper = [0.5; 0.5; 0.5; 0.5; 0.5; 3.0; deg2rad(3.0); deg2rad(2) ; deg2rad(2); 3; 10; deg2rad(3)];
     lower = -upper;
     random = lower + (upper - lower).*rand(12, 1);
+    %random = [0.1868; -0.3165; -0.1315; 0.1256; 0.2802; -2.5132; 0.0450; 0.0192; -0.0009; -0.3848; -1.0643; -0.0203];
     vactual = vnom + random;
     %vactual = vnom + [0.15; 0.21; 0.13; 0.23; 0.22; 7; deg2rad(4.1); deg2rad(6.5); deg2rad(-2.7); 43; 7; deg2rad(2.5)];
     
@@ -73,9 +104,14 @@ means = zeros(2*n - 2, 1);
         counter = counter + 1;
         xWorld = -(v(i) - v(neutral)) / 50;
         yWorld = -(u(i) - u(neutral)) / 50;
-         means(2*counter-1) = xWorld;
-         means(2*counter) = yWorld;
-
+        if simulation == 1
+            means(2*counter-1) = xWorld - 0.002 + 0.004 * rand;
+            means(2*counter) = yWorld - 0.002 + 0.004 * rand;
+        else
+            means(2*counter-1) = xWorld;
+            means(2*counter) = yWorld;
+        end
+        
         tmpphis (2 *counter - 1) = phis(2 * i - 1);
         tmpphis(2*counter) = phis(2 * i);
      end
@@ -130,3 +166,6 @@ if simulation == 1
 disp(vactual');
 disp((vreal - vactual)');
 end
+
+difference = vreal - vactual
+
