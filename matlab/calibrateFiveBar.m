@@ -28,9 +28,14 @@ means = [60; 348.617 + 10;
 
 phis = [];
 n = size(means, 1) / 2;
+neutral = (n) / 2;
 vnom = [270; 370; 270; 370; 200; 370; 0; 0; 0; 0; -348.617; 0];
-u = [548.66,  1042.6,   550.09, 1046.82, 1049.9  ,   550.97, 1055.72 ,  547.55];
-v = [6619.62, 7618.86,  8616.6, 9615.15, 10614.57, 11612.62, 12612.92, 13616.02];
+u1 = [546.11,   1040.5,     548         1044.4  1048    549.17      1053.65     545.59];
+u2 = [546.11,   1040.52,    547.98      1044.43 1047.96 549.2       1053.64     545.6];
+v1 = [2122.87,  3124.33,    4123.45     5123.56 6124.74 7122.86     8125.27     9128.57];
+v2 = [2122.86,  3124.32,    4123.5      5123.56 6124.78 7122.84     8125.29     9128.58];
+u = (u1 + u2) /2;
+v = (v1 + v2) /2;
 
 for i = 1 : n
     pBase = [means(2*i - 1);means(2*i)];
@@ -38,21 +43,23 @@ for i = 1 : n
     phis = [phis, phi];
 end
 
-disp(rad2deg(phis));
-return;
-
 if simulation == 1
-    vactual = vnom + [0.15; 0.21; 0.13; 0.23; 0.22; 7; deg2rad(4.1); deg2rad(6.5); deg2rad(-2.7); 4.3; 7; deg2rad(2.5)];
+    %        L11  L12   L21 L22    D   L23      GAMA       DELTA1       DELTA2    X0 Y0     ALPHA;
+    upper = [0.5; 0.5; 0.5; 0.5; 0.5; 3.0; deg2rad(3.0); deg2rad(2) ; deg2rad(2); 3; 10; deg2rad(3)];
+    lower = -upper;
+    random = lower + (upper - lower).*rand(12, 1);
+    vactual = vnom + random;
+    %vactual = vnom + [0.15; 0.21; 0.13; 0.23; 0.22; 7; deg2rad(4.1); deg2rad(6.5); deg2rad(-2.7); 43; 7; deg2rad(2.5)];
     
     for i = 1 : n
         [xtmp, ytmp] = fk_sym(vactual, [phis(1, i); phis(2, i)]);
         [xWorldTmp, yWorldTmp] = base2world(vactual, [xtmp, ytmp]);
-         means(2*i-1) = xWorldTmp;
-         means(2*i) = yWorldTmp;
+%          means(2*i-1) = xWorldTmp;
+%          means(2*i) = yWorldTmp;
         
-        if (i ~= 4)
-            v(i) = v(4) - 50 * xWorldTmp;
-            u(i) = u(4) - 50 * yWorldTmp;
+        if (i ~= neutral)
+            v(i) = v(neutral) - 50 * xWorldTmp;
+            u(i) = u(neutral) - 50 * yWorldTmp;
         end
     end
 end
@@ -62,12 +69,13 @@ counter = 0;
 tmpphis = zeros(2, n - 1);
 means = zeros(2*n - 2, 1);
  for i = 1 : n
-     if (i ~= 4)
+     if (i ~= neutral)
         counter = counter + 1;
-        xWorld = -(v(i) - v(4)) / 50;
-        yWorld = -(u(i) - u(4)) / 50;
-        means(2*counter-1) = xWorld;
-        means(2*counter) = yWorld;
+        xWorld = -(v(i) - v(neutral)) / 50;
+        yWorld = -(u(i) - u(neutral)) / 50;
+         means(2*counter-1) = xWorld;
+         means(2*counter) = yWorld;
+
         tmpphis (2 *counter - 1) = phis(2 * i - 1);
         tmpphis(2*counter) = phis(2 * i);
      end
