@@ -6,8 +6,9 @@ fiveLinkage = RRRRR;
 % R = [0.21; 0.32; 0.1];
 % D = sum(R);
 % fiveLinkage.r = R / D;        %non-dimensional 
-fiveLinkage.r = [0.21; 0.32; 0.1];
-%fiveLinkage.r = [0.2; 0.26; 0.085/2];  %RP-5AH
+fiveLinkage.r = [0.270; 0.370; 0.1]; %total 0.64
+%fiveLinkage.r = [0.21; 0.32; 0.1];
+%fiveLinkage.r = [0.2; 0.16; 0.085/2];  %RP-5AH
 %fiveLinkage.r = [1; 1; 0.4];  %lenth parameters of edcational robots
 fiveLinkage.theta = [0; 0];
 fiveLinkage.A1 = [-fiveLinkage.r(3); 0];
@@ -227,6 +228,7 @@ function  AxesMouseClicked(Object, ~)
     startDegree = [fiveLinkage.theta(1); fiveLinkage.theta(2); phi - fiveLinkage.passive_theta(1)];
     
     fiveLinkage = fiveLinkage.inverseKinematics(newP);
+    %fiveLinkage = fiveLinkage.inverseKinematics([0 ;0]);
     if (fiveLinkage.ik_nSol < 4)
         return;
     end
@@ -289,13 +291,14 @@ function handleToolTipChanged(newToolTip, mode)
     global theta1Slider theta2Slider;
     global thetaR;
     p = getEndPoint(newToolTip);
-    
+    disp('end point corrdinates:');
+    disp(p);
     fiveLinkage = fiveLinkage.setP(p, mode);
     if (fiveLinkage.ik_nSol < 4)
         return;
     end
-    
-    %disp(fiveLinkage.theta);
+    disp('IK result:');
+    disp(deg2rad(fiveLinkage.theta));
     
     theta1Slider.Value = fiveLinkage.theta(1);
     theta2Slider.Value = fiveLinkage.theta(2);
@@ -433,6 +436,6 @@ function [range1, range2] = calcJointRange(r)
     d = r1 + r2 - 2*r3;
     cosine = (r1^2 + d^2 - r2^2)/(2 * r1 *d);
     t = acosd(cosine);
-    range1 = [0; 180 + t];
-    range2 = [-t; 180];
+    range1 = deg2rad([0; 180 + t]);
+    range2 = deg2rad([-t; 180]);
 end

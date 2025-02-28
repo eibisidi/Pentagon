@@ -1,6 +1,5 @@
-function phi = ik_sym(pE_WF, w)
-syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 X0 Y0 ;
-sym ALPHA;
+function phi = ik_sym(pE_Base, w)
+syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 real;
 
 L11 = w(1);
 L12 = w(2);
@@ -11,12 +10,14 @@ L23 = w(6);
 GAMA = w(7);
 DELTA1 = w(8);
 DELTA2 = w(9);
-X0 = w(10); 
-Y0 = w(11);
-ALPHA = w(12);
-pTmp = pE_WF - [X0; Y0];
-rotation = [cos(ALPHA) sin(ALPHA); -sin(ALPHA) cos(ALPHA)];
-rOE = rotation' * pTmp;
+% X0 = w(10); 
+% Y0 = w(11);
+% ALPHA = w(12);
+% pTmp = pE_WF - [X0; Y0];
+% rotation = [cos(ALPHA) sin(ALPHA); -sin(ALPHA) cos(ALPHA)];
+% rOE = rotation' * pTmp;
+
+rOE = pE_Base;
 
 rA2E = rOE - [D/2; 0];
 dA2E = sqrt(rA2E' * rA2E);

@@ -1,7 +1,6 @@
-function [xWF, yWF] = fk_sym(w, phi)
-syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 X0 Y0 ;
-sym ALPHA;
-syms T1 T2;
+function [xBF, yBF] = fk_sym(w, phi)
+syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 real;
+syms T1 T2 real;
 L11 = w(1);
 L12 = w(2);
 L21 = w(3);
@@ -11,9 +10,7 @@ L23 = w(6);
 GAMA = w(7);
 DELTA1 = w(8);
 DELTA2 = w(9);
-X0 = w(10); 
-Y0 = w(11);
-ALPHA = w(12);
+
 T1 = phi(1);
 T2 = phi(2);
 skew = [ 0 -1; 1 0];
@@ -28,8 +25,5 @@ rOC = rOB1 + b1 / dB1B2 * rB1B2 + h / dB1B2 * skew * rB1B2;
 rOE = rOB2 + L23/L22 * rotation * (rOC - rOB2);
 xBF = rOE(1); %{BASE}
 yBF = rOE(2);
-pE = [X0 + xBF * cos(ALPHA) - yBF * sin(ALPHA); Y0 + xBF * sin(ALPHA) + yBF * cos(ALPHA)];
-xWF = pE(1);
-yWF = pE(2);
 end
 
