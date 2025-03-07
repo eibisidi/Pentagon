@@ -24,26 +24,48 @@ calib_points = zeros(2, n); %{BF}
 measures = zeros(2, n);
 thetas = zeros(2, n);
 vnom =   [270; 370;  270;   370;  200;   370;     0;     0;     0;    0; 0; 0];
-vdelta = [0.01; 0.3; 0.04; -0.04; 0.02; -0.02; 0.003; 0.004; 0.007;    0; 0; 0];
+vdelta =  [0.2; -0.2; 0.3; 0.25; 0.31; 1; 0.04; 0.07; 0.037;    0; 0; 0];
 vactual = vnom + vdelta;
 m = 9;
-offset_error = 0.001;
+offset_error = 0.0005;
 
+xrange = linspace(-260, 260, n);
+yrange = linspace(350, 360, n);
+%calib_points = saved_points;
 for i = 1 : n
-    xtmp = 260 - (i-1) * 20;
-    ytmp = 348.617;
+    xtmp = xrange(i) + 10 * rand;
+     ytmp = 348.617 - 5 +  10 * rand;
     calib_points(:, i) = [xtmp; ytmp];
     phitmp = ik_sym(vnom, calib_points(:,i));
     thetas(:, i) = phitmp;
     bf_tmp = fk_sym(vactual, phitmp);
     wf_tmp = base2world(vactual, bf_tmp);
-    measures(:, i) = wf_tmp + (-offset_error + (offset_error + offset_error)*rand(2,1)); %add rand
+    
+    measures(:, i) = [0;0];
+    for j = 1 :1
+        mea = wf_tmp + (-offset_error + (offset_error + offset_error)*rand(2,1));
+        measures(:, i) = measures(:, i) + mea;
+    end
+    measures(:, i) = measures(:, i) / 1;
 end
-
+saved_points = calib_points;
 means = measures(1,:)';
 estimate = zeros(n, 1);
 J = zeros(n, m);
 vreal = vnom;
+
+for k = 1 : n %populate matrix J ; estimate est vector
+    w_phi = [vreal; thetas(1, k); thetas(2, k)];
+    Jk = subs(Jk_formula, [L11; L12; L21; L22; D; L23; GAMA; DELTA1; DELTA2; ALPHAA; X0; Y0; T1; T2], w_phi);
+    
+    bf = fk_sym(vactual, [thetas(1, k); thetas(2, k)]);
+    %wf = base2world(vreal, bf);
+    wf = bf;
+    estimate(k) = wf(1);
+end
+y = means - estimate;
+ACTUAL_RMSE = sqrt((y' * y )/ (n)); 
+
 for i = 1:6
     for k = 1 : n %populate matrix J ; estimate est vector
         w_phi = [vreal; thetas(1, k); thetas(2, k)];
@@ -79,12 +101,13 @@ for i = 1:6
     
     
     
-    RMSE = sqrt((y' * y )/ (2*n));
-    fprintf("[%d] RMSE=%f. cond(J)=%f, cond(RJ)=%f\n", i, RMSE, cond(J), cond(RJ));
+    RMSE = sqrt((y' * y )/ (n));
+    fprintf("[%d] RMSE=%f. cond(J)=%f, cond(RJ)=%f. ACTUAL_RMSE=%f\n", i, RMSE, cond(J), cond(RJ), ACTUAL_RMSE);
+
     if (RMSE < 1E-16)
         fprintf("converge criterion meets.i=%d.\n", i);
         break;
     end
 end
 
-disp(vreal - vactual);
+disp((vreal - vactual)');
