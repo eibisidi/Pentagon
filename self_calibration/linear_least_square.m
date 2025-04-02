@@ -40,24 +40,29 @@ rB2A2 = [D/2; 0]-rOB2;
 COSG2 = rB2C.'*rB2A2 / (L22 * L21);
 COSE2 = COSG2 * cos(DELTA4) + sqrt(1- COSG2*COSG2) * sin(DELTA4);
 
-%Jacobians
-Jk_formula = [...
-    diff(COSE1, L11), diff(COSE1, L12), diff(COSE1, L21), diff(COSE1, L22),  diff(COSE1, DELTA1), diff(COSE1, DELTA2), diff(COSE1, DELTA3), diff(COSE1, DELTA4);...
-    diff(COSE2, L11), diff(COSE2, L12), diff(COSE2, L21), diff(COSE2, L22),  diff(COSE2, DELTA1), diff(COSE2, DELTA2), diff(COSE2, DELTA3), diff(COSE2, DELTA4)];
-
 n=size(bf_thetas_degs, 2);   %measure times
-m = size(vactual, 1);        %运动学参数个数
+
 
 if encoders == 4
-measures = zeros(2*n,1);     %measured values = [cosg1; cosg2; ...]
-actuals  = zeros(2*n,1);     %real values of [cosg1; cosg2; ...]
-J = zeros(2 * n, m);
-estimate = zeros(2*n,1);
+    %Jacobians
+    Jk_formula = [...
+        diff(COSE1, L11), diff(COSE1, L12), diff(COSE1, L21), diff(COSE1, L22),  diff(COSE1, DELTA1), diff(COSE1, DELTA2), diff(COSE1, DELTA3), diff(COSE1, DELTA4);...
+        diff(COSE2, L11), diff(COSE2, L12), diff(COSE2, L21), diff(COSE2, L22),  diff(COSE2, DELTA1), diff(COSE2, DELTA2), diff(COSE2, DELTA3), diff(COSE2, DELTA4)];
+    m = size(vactual, 1);        %运动学参数个数
+    measures = zeros(2*n,1);     %measured values = [cosg1; cosg2; ...]
+    actuals  = zeros(2*n,1);     %real values of [cosg1; cosg2; ...]
+    J = zeros(2 * n, m);
+    estimate = zeros(2*n,1);
 else
-measures = zeros(n,1);     %measured values = [cosg1; cosg2; ...]
-actuals  = zeros(n,1);     %real values of [cosg1; cosg2; ...]
-J = zeros(n, m);
-estimate = zeros(n,1);
+     Jk_formula = [...
+        diff(COSE1, L11), diff(COSE1, L12), diff(COSE1, L21), diff(COSE1, L22),  diff(COSE1, DELTA1), diff(COSE1, DELTA2), diff(COSE1, DELTA3)];
+    vnom = vnom(1:size(vnom,1)-1, :);
+    vactual = vactual(1:size(vactual,1)-1, :);
+    m = size(vactual, 1);        %运动学参数个数    
+    measures = zeros(n,1);     %measured values = [cosg1; cosg2; ...]
+    actuals  = zeros(n,1);     %real values of [cosg1; cosg2; ...]
+    J = zeros(n, m);
+    estimate = zeros(n,1);
 end
 thetas   = zeros(2,n);       %measure values of encoders in radian
 
@@ -70,18 +75,21 @@ for i=1:n
     %计算真值
     actual_t1_deg = bf_thetas_degs(1,i) - rad2deg(vactual(5));
     actual_t2_deg = bf_thetas_degs(2,i) - rad2deg(vactual(6));
-    actual_cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
-    actual_cose2 = eval(subs(COSE2, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
     
-    %计算被动编码器角余弦测量值
-    measure_e1d = acosd(actual_cose1) - encoder_error + 2 * encoder_error * rand;
-    measure_e2d = acosd(actual_cose2) - encoder_error + 2 * encoder_error * rand;
     if encoders == 4 
+        actual_cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
+        actual_cose2 = eval(subs(COSE2, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
+        %计算被动编码器角余弦测量值
+        measure_e1d = acosd(actual_cose1) - encoder_error + 2 * encoder_error * rand;
+        measure_e2d = acosd(actual_cose2) - encoder_error + 2 * encoder_error * rand;
         actuals(2*i - 1) = actual_cose1;
         actuals(2*i)     = actual_cose2;
         measures(2*i - 1) = cosd(measure_e1d);
         measures(2*i)     = cosd(measure_e2d);
     else
+        actual_cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
+        %计算被动编码器角余弦测量值
+        measure_e1d = acosd(actual_cose1) - encoder_error + 2 * encoder_error * rand;
         actuals(i) = actual_cose1;
         measures(i) = cosd(measure_e1d);
     end
@@ -95,16 +103,19 @@ means = measures;
 for i = 1:6
     for k = 1 : n %populate matrix J ; estimate using current phi
         w_phi = [vreal; thetas(1, k); thetas(2, k)]; %运动学参数；主动角测量值
-        Jk = subs(Jk_formula, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], w_phi);
-        %使用当前运动学参数估计
-        cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], w_phi));
-        cose2 = eval(subs(COSE2, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], w_phi));
         if encoders == 4 
+            Jk = subs(Jk_formula, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], w_phi);
+            %使用当前运动学参数估计
+            cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], w_phi));
+            cose2 = eval(subs(COSE2, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], w_phi));
             J(2*k-1,:) = Jk(1,:);
             J(2*k,:) = Jk(2,:);
             estimate(2*k-1) = cose1;
             estimate(2*k)   = cose2;
         else
+            Jk = subs(Jk_formula, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; T1; T2], w_phi);
+            %使用当前运动学参数估计
+            cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; T1; T2], w_phi));
             J(k,:) = Jk(1,:);
             estimate(k) = cose1;
         end
