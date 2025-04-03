@@ -4,7 +4,7 @@ syms COSG1 COSG2 real;      %左右被动关节角余弦
 syms COSE1 COSE2 real;      %编码器角度对应余弦值
 
 encoders = 4;
-encoder_error = 5/3600; %编码器测量误差
+encoder_error = 1/3600; %编码器测量误差
 vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %运动学参数名义值
 vdelta =  [0.3; 0.2; 0.21; 0.25; 0.02; 0.01; 0.04; 0.02]; %参数增量
 %vdelta = zeros(size(vnom, 1), 1);
@@ -53,6 +53,7 @@ if encoders == 4
     actuals  = zeros(2*n,1);     %real values of [cosg1; cosg2; ...]
     J = zeros(2 * n, m);
     estimate = zeros(2*n,1);
+    measures_ag = zeros(2*n,1);  %measured values = [cosg1; cosg1; ...cosg2; cosg2]
 else
      Jk_formula = [...
         diff(COSE1, L11), diff(COSE1, L12), diff(COSE1, L21), diff(COSE1, L22),  diff(COSE1, DELTA1), diff(COSE1, DELTA2), diff(COSE1, DELTA3)];
@@ -84,8 +85,10 @@ for i=1:n
         measure_e2d = acosd(actual_cose2) - encoder_error + 2 * encoder_error * rand;
         actuals(2*i - 1) = actual_cose1;
         actuals(2*i)     = actual_cose2;
-        measures(2*i - 1) = cosd(measure_e1d);
-        measures(2*i)     = cosd(measure_e2d);
+        measures(2*i - 1) = cosd(measure_e1d); %奇数行为左侧编码器角余弦
+        measures(2*i)     = cosd(measure_e2d); %偶数行为右侧编码器角余弦
+        measures_ag(i)    = measures(2*i - 1);
+        measures_ag(n+i)  = measures(2*i);
     else
         actual_cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
         %计算被动编码器角余弦测量值
