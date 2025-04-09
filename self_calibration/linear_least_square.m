@@ -6,20 +6,20 @@ syms COSE1 COSE2 real;      %编码器角度对应余弦值
 global measures_ag t1s t2s
 
 encoders = 4;
-do_linear_calibrate = 1;
-do_nonlinear_calibrate = 0;
-do_column_scaling = 0;
-encoder_error = 0/1000; %编码器测量误差
-passive_encoder_error = 0/1000;
+do_linear_calibrate = 0;
+do_nonlinear_calibrate = 1;
+do_column_scaling = 1;
+encoder_error = 1/3600; %编码器测量误差
+passive_encoder_error = 1/360;
 vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %运动学参数名义值
-vdelta =  [0.3; 0.2; 0.21; 0.25; 0.02; 0.01; 0.04; 0.02]; %参数增量
+vdelta =  [0.5; 0.45; 0.55; 0.35; 0.03; 0.03; 0.04; 0.05]; %参数增量
 %vdelta = zeros(size(vnom, 1), 1);
 vactual = vnom + vdelta;
 bf_thetas_degs = [];
 
 angle_step = 5;
-for bf_t2_deg = 90 : -angle_step: 45
-    for bf_t1_deg = 90 : angle_step : 135
+for bf_t2_deg = 90 : -angle_step: 25
+    for bf_t1_deg = 90 : angle_step : 155
         bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
     end
 end
@@ -133,7 +133,7 @@ for i = 1:6
     if do_column_scaling == 1
     %centralized matrix
     C = eye(size(y, 1)) - ones(size(y, 1)) / (size(y, 1));
-    C = eye(size(y, 1));
+    %C = eye(size(y, 1));
     X = C * J; %centralized matrix
     
     %do column scaling
@@ -142,20 +142,20 @@ for i = 1:6
         d(c) = norm(X(:, c));
     end
     
-    csMatrix = diag(d); %column scaling matrix
-    Xnorm = X / (csMatrix);
-    RX = Xnorm' * Xnorm;
+    csMatrix = diag(d);                 %column scaling matrix
+    Xnorm = X / (csMatrix);             %X*inv(D)
+    RX = Xnorm' * Xnorm;                %correlation coefficient matrix
     y = means - estimate;
     Cy = C * (means - estimate);
-    delta_norm = (RX) \ (Xnorm' * Cy);
-    delta = csMatrix \ delta_norm;
+    delta_norm = Xnorm \ Cy;        %Cy = Xnorm * delta_norm
+    delta = csMatrix \ delta_norm;  %delta_norm = D * delta
     else
         y = means - estimate;
-        RX = J;
-        delta = J \ y;
+        Xnorm = J;
+        delta = Xnorm \ y;
     end
     RMSE = sqrt((y' * y )/ (size(y, 1)));
-    fprintf("[%d] RMSE=%f. cond(J)=%f, cond(RX)=%f. ACTUAL_RMSE=%f\n", i, RMSE, cond(J), cond(RX), ACTUAL_RMSE);
+    fprintf("[%d] RMSE=%f. cond(J)=%f, cond(Jnorm)=%f. ACTUAL_RMSE=%f\n", i, RMSE, cond(J), cond(Xnorm), ACTUAL_RMSE);
 
     if (RMSE < 1E-16)
         fprintf("converge criterion meets.i=%d.\n", i);
