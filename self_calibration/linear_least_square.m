@@ -8,6 +8,7 @@ global measures_ag t1s t2s
 encoders = 4;
 do_linear_calibrate = 1;
 do_nonlinear_calibrate = 0;
+do_column_scaling = 0;
 encoder_error = 0/1000; %编码器测量误差
 passive_encoder_error = 0/1000;
 vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %运动学参数名义值
@@ -129,7 +130,7 @@ for i = 1:6
             estimate(k) = cose1;
         end
     end
-    
+    if do_column_scaling == 1
     %centralized matrix
     C = eye(size(y, 1)) - ones(size(y, 1)) / (size(y, 1));
     C = eye(size(y, 1));
@@ -148,6 +149,11 @@ for i = 1:6
     Cy = C * (means - estimate);
     delta_norm = (RX) \ (Xnorm' * Cy);
     delta = csMatrix \ delta_norm;
+    else
+        y = means - estimate;
+        RX = J;
+        delta = J \ y;
+    end
     RMSE = sqrt((y' * y )/ (size(y, 1)));
     fprintf("[%d] RMSE=%f. cond(J)=%f, cond(RX)=%f. ACTUAL_RMSE=%f\n", i, RMSE, cond(J), cond(RX), ACTUAL_RMSE);
 
