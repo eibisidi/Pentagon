@@ -3,8 +3,13 @@ syms T1 T2 real;            %左右主动轴编码器读数
 syms COSG1 COSG2 real;      %左右被动关节角余弦
 syms COSE1 COSE2 real;      %编码器角度对应余弦值
 
+global measures_ag t1s t2s
+
 encoders = 4;
-encoder_error = 1/3600; %编码器测量误差
+do_linear_calibrate = 1;
+do_nonlinear_calibrate = 0;
+encoder_error = 0/1000; %编码器测量误差
+passive_encoder_error = 0/1000;
 vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %运动学参数名义值
 vdelta =  [0.3; 0.2; 0.21; 0.25; 0.02; 0.01; 0.04; 0.02]; %参数增量
 %vdelta = zeros(size(vnom, 1), 1);
@@ -81,8 +86,8 @@ for i=1:n
         actual_cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
         actual_cose2 = eval(subs(COSE2, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
         %计算被动编码器角余弦测量值
-        measure_e1d = acosd(actual_cose1) - encoder_error + 2 * encoder_error * rand;
-        measure_e2d = acosd(actual_cose2) - encoder_error + 2 * encoder_error * rand;
+        measure_e1d = acosd(actual_cose1) - passive_encoder_error + 2 * passive_encoder_error * rand;
+        measure_e2d = acosd(actual_cose2) - passive_encoder_error + 2 * passive_encoder_error * rand;
         actuals(2*i - 1) = actual_cose1;
         actuals(2*i)     = actual_cose2;
         measures(2*i - 1) = cosd(measure_e1d); %奇数行为左侧编码器角余弦
@@ -92,7 +97,7 @@ for i=1:n
     else
         actual_cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
         %计算被动编码器角余弦测量值
-        measure_e1d = acosd(actual_cose1) - encoder_error + 2 * encoder_error * rand;
+        measure_e1d = acosd(actual_cose1) - passive_encoder_error + 2 * passive_encoder_error * rand;
         actuals(i) = actual_cose1;
         measures(i) = cosd(measure_e1d);
     end
@@ -101,6 +106,7 @@ end
 y = measures - actuals;
 ACTUAL_RMSE = sqrt((y' * y )/ (size(y, 1))); 
 
+if do_linear_calibrate == 1
 vreal = vnom;
 means = measures;
 for i = 1:6
@@ -154,3 +160,13 @@ for i = 1:6
 end
 
 disp((vreal - vactual)');
+end
+
+if do_nonlinear_calibrate == 1
+t1s = thetas(1, :)';
+t2s = thetas(2, :)';
+x0 = vnom;
+options = optimoptions(@lsqnonlin,'Algorithm','trust-region-reflective');
+[x,resnorm,residual,exitflag,output] = lsqnonlin(@eag,x0,[],[],options);
+disp(x' - vactual');
+end
