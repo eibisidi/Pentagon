@@ -17,7 +17,7 @@ vdelta =  [0.5; 0.45; 0.55; 0.35; 0.03; 0.03; 0.04; 0.05]; %参数增量
 vactual = vnom + vdelta;
 bf_thetas_degs = [];
 
-angle_step = 5;
+angle_step = 4;
 for bf_t2_deg = 90 : -angle_step: 25
     for bf_t1_deg = 90 : angle_step : 155
         bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
@@ -152,10 +152,13 @@ if do_linear_calibrate == 1
         else
             y = means - estimate;
             Xnorm = J;
+            RX = Xnorm' * Xnorm;
             delta = Xnorm \ y;
         end
-        RMSE = sqrt((y' * y )/ (size(y, 1)));
-        fprintf("[%d] RMSE=%f. cond(J)=%f, cond(Jnorm)=%f. ACTUAL_RMSE=%f\n", i, RMSE, cond(J), cond(Xnorm), ACTUAL_RMSE);
+        ORX = (det(RX)^(1/(2*m)))/sqrt(n);       %use J or Xnorm to compute O1?
+        O1 = (det(J'*J)^(1/(2*m)))/sqrt(n);   
+        RMSE = sqrt((y' * y )/ (size(y, 1)));   %Observation Index 1
+        fprintf("[%d] RMSE=%f. cond(J)=%f, cond(Jnorm)=%f, O1=%f.ORX=%f ACTUAL_RMSE=%f\n", i, RMSE, cond(J), cond(Xnorm), O1,ORX, ACTUAL_RMSE);
         
         if (RMSE < 1E-16)
             fprintf("converge criterion meets.i=%d.\n", i);
