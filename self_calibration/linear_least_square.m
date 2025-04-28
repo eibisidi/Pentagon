@@ -6,11 +6,11 @@ syms COSE1 COSE2 real;      %编码器角度对应余弦值
 global measures_ag t1s t2s
 
 encoders = 4;
-do_linear_calibrate = 1;
-do_nonlinear_calibrate = 0;
+do_linear_calibrate = 0;
+do_nonlinear_calibrate = 1;
 do_column_scaling = 1;
-encoder_error = 0/360; %编码器测量误差
-passive_encoder_error = 0/360;
+encoder_error = 2/3600; %编码器测量误差
+passive_encoder_error = 1/360;
 vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %运动学参数名义值
 vdelta =  [0.5; 0.45; 0.55; 0.35; 0.03; 0.03; 0.04; 0.05]; %参数增量
 %vdelta = zeros(size(vnom, 1), 1);
@@ -23,6 +23,11 @@ for bf_t2_deg = 90 : -angle_step: 25
         bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
     end
 end
+% for i=1:10
+%     bf_t1_deg = 90 + rand*(155 - 90);
+%     bf_t2_deg = 90 - rand*(155 - 90);
+%     bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
+% end
 
 D = 200; %固定D求出杆长比例
 skew = [ 0 -1; 1 0];
@@ -169,6 +174,7 @@ if do_linear_calibrate == 1
     end
     
     disp((vreal - vactual)');
+    disp(norm(vreal - vactual));
 end
 
 if do_nonlinear_calibrate == 1
