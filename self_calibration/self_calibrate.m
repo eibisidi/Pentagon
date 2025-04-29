@@ -1,17 +1,20 @@
-%使用编码器标定运动学参数
+%使用冗余编码器进行运动学参数自标定
+clear;
 syms L11 L12 L21 L22 D DELTA1 DELTA2 DELTA3 DELTA4 real;
 syms T1 T2 real;            %左右主动轴编码器读数
 syms COSG1 COSG2 real;      %左右被动关节角余弦
 syms COSE1 COSE2 real;      %编码器角度对应余弦值
 
-global measures_ag t1s t2s
+global measures_ag t1s t2s; %非线性最小二乘需要使用的全局数据
+global vactual;             %真实运动学参数
+global vreal;               %标定结果
 
 encoders = 4;
 do_linear_calibrate = 0;
 do_nonlinear_calibrate = 1;
 do_column_scaling = 1;
-encoder_error = 2/3600;             %编码器测量误差
-passive_encoder_error = 1/360;      %被动关节编码器噪声
+encoder_error = 2/3600;                                   %编码器测量误差
+passive_encoder_error = 1/360;                            %被动关节编码器噪声
 vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %运动学参数名义值
 vdelta =  [0.5; 0.45; 0.55; 0.35; 0.03; 0.03; 0.04; 0.05]; %参数增量
 %vdelta = zeros(size(vnom, 1), 1);
@@ -183,6 +186,11 @@ if do_nonlinear_calibrate == 1
     t2s = thetas(2, :)';
     x0 = vnom;  %非线性最小二乘法初始值
     options = optimoptions(@lsqnonlin,'Algorithm','trust-region-reflective', 'OptimalityTolerance', 1.000000e-7);
-    [x,resnorm,residual,exitflag,output] = lsqnonlin(@eag,x0,[],[],options);
-    disp(x' - vactual');
+    [vreal,resnorm,residual,exitflag,output] = lsqnonlin(@self_eag,x0,[],[],options);
+    diff = (vreal - vactual);
+    disp(diff');
+    %L11 L12 L21 L22 DELTA1 DELTA2 DELTA3 DELTA4
+    fprintf("L11=%f, L12=%f, L21=%f, L22=%f\n", diff(1), diff(2), diff(3), diff(4));
+    fprintf("DELTA1=%f(deg), DELTA2=%f(deg)\n", rad2deg(diff(5)), rad2deg(diff(6)));
+    fprintf("DELTA3=%f(deg), DELTA4=%f(deg)\n", rad2deg(diff(7)), rad2deg(diff(8)));
 end
