@@ -1,3 +1,4 @@
+%使用编码器标定运动学参数
 syms L11 L12 L21 L22 D DELTA1 DELTA2 DELTA3 DELTA4 real;
 syms T1 T2 real;            %左右主动轴编码器读数
 syms COSG1 COSG2 real;      %左右被动关节角余弦
@@ -9,14 +10,15 @@ encoders = 4;
 do_linear_calibrate = 0;
 do_nonlinear_calibrate = 1;
 do_column_scaling = 1;
-encoder_error = 2/3600; %编码器测量误差
-passive_encoder_error = 1/360;
+encoder_error = 2/3600;             %编码器测量误差
+passive_encoder_error = 1/360;      %被动关节编码器噪声
 vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %运动学参数名义值
 vdelta =  [0.5; 0.45; 0.55; 0.35; 0.03; 0.03; 0.04; 0.05]; %参数增量
 %vdelta = zeros(size(vnom, 1), 1);
 vactual = vnom + vdelta;
 bf_thetas_degs = [];
 
+%左右两个关节构成的Observation Strategies
 angle_step = 4;
 for bf_t2_deg = 90 : -angle_step: 25
     for bf_t1_deg = 90 : angle_step : 155
@@ -29,7 +31,7 @@ end
 %     bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
 % end
 
-D = 200; %固定D求出杆长比例
+D = 200; %固定D求出杆长比例，影响cose1_func.m cose2_func.m的生成
 skew = [ 0 -1; 1 0];
 rOB1 = [L11 * cos(T1 + DELTA1) - D / 2; L11 * sin(T1 + DELTA1)];
 rOB2 = [L21 * cos(T2 + DELTA2) + D / 2; L21 * sin(T2 + DELTA2)];
@@ -52,7 +54,6 @@ COSG2 = rB2C.'*rB2A2 / (L22 * L21);
 COSE2 = COSG2 * cos(DELTA4) + sqrt(1- COSG2*COSG2) * sin(DELTA4);
 
 n=size(bf_thetas_degs, 2);   %measure times
-
 
 if encoders == 4
     %Jacobians
@@ -180,7 +181,7 @@ end
 if do_nonlinear_calibrate == 1
     t1s = thetas(1, :)';
     t2s = thetas(2, :)';
-    x0 = vnom;
+    x0 = vnom;  %非线性最小二乘法初始值
     options = optimoptions(@lsqnonlin,'Algorithm','trust-region-reflective', 'OptimalityTolerance', 1.000000e-7);
     [x,resnorm,residual,exitflag,output] = lsqnonlin(@eag,x0,[],[],options);
     disp(x' - vactual');
