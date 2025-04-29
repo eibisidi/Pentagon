@@ -1,12 +1,13 @@
-function [bf] = fk_sym(w, phi)
-% syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 real;
-% syms T1 T2 real;
+﻿function [bf] = fk_sym(w, phi)
+%进行FK,得到{BF}中E的坐标
+% w: L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 real;
+% phi 左右关节角
 L11 = w(1);
 L12 = w(2);
 L21 = w(3);
 L22 = w(4);
 D = w(5);
-L23 = L22;          %��E��Ϊ׼
+L23 = L22;          %以E点为准
 GAMA = 0;
 DELTA1 = w(8);
 DELTA2 = w(9);

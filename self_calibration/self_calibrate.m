@@ -1,28 +1,28 @@
-%Ê¹ÓÃÈßÓà±àÂëÆ÷½øĞĞÔË¶¯Ñ§²ÎÊı×Ô±ê¶¨
+ï»¿%ä½¿ç”¨å†—ä½™ç¼–ç å™¨è¿›è¡Œè¿åŠ¨å­¦å‚æ•°è‡ªæ ‡å®š
 clear;
 syms L11 L12 L21 L22 D DELTA1 DELTA2 DELTA3 DELTA4 real;
-syms T1 T2 real;            %×óÓÒÖ÷¶¯Öá±àÂëÆ÷¶ÁÊı
-syms COSG1 COSG2 real;      %×óÓÒ±»¶¯¹Ø½Ú½ÇÓàÏÒ
-syms COSE1 COSE2 real;      %±àÂëÆ÷½Ç¶È¶ÔÓ¦ÓàÏÒÖµ
+syms T1 T2 real;            %å·¦å³ä¸»åŠ¨è½´ç¼–ç å™¨è¯»æ•°
+syms COSG1 COSG2 real;      %å·¦å³è¢«åŠ¨å…³èŠ‚è§’ä½™å¼¦
+syms COSE1 COSE2 real;      %ç¼–ç å™¨è§’åº¦å¯¹åº”ä½™å¼¦å€¼
 
-global measures_ag t1s t2s; %·ÇÏßĞÔ×îĞ¡¶ş³ËĞèÒªÊ¹ÓÃµÄÈ«¾ÖÊı¾İ
-global vactual;             %ÕæÊµÔË¶¯Ñ§²ÎÊı
-global vreal;               %±ê¶¨½á¹û
+global measures_ag t1s t2s; %éçº¿æ€§æœ€å°äºŒä¹˜éœ€è¦ä½¿ç”¨çš„å…¨å±€æ•°æ®
+global vactual;             %çœŸå®è¿åŠ¨å­¦å‚æ•°
+global vreal;               %æ ‡å®šç»“æœ
 
 encoders = 4;
 do_linear_calibrate = 0;
 do_nonlinear_calibrate = 1;
 do_column_scaling = 1;
-encoder_error = 2/3600;                                   %±àÂëÆ÷²âÁ¿Îó²î
-passive_encoder_error = 1/360;                            %±»¶¯¹Ø½Ú±àÂëÆ÷ÔëÉù
-vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %ÔË¶¯Ñ§²ÎÊıÃûÒåÖµ
-vdelta =  [0.5; 0.45; 0.55; 0.35; 0.03; 0.03; 0.04; 0.05]; %²ÎÊıÔöÁ¿
+encoder_error = 60/3600;                                   %ç¼–ç å™¨æµ‹é‡è¯¯å·®
+passive_encoder_error = 6/360;                            %è¢«åŠ¨å…³èŠ‚ç¼–ç å™¨å™ªå£°
+vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %è¿åŠ¨å­¦å‚æ•°åä¹‰å€¼
+vdelta =  [0.5; 0.45; 0.55; 0.35; 0.03; 0.03; 0.04; 0.05]; %å‚æ•°å¢é‡
 %vdelta = zeros(size(vnom, 1), 1);
 vactual = vnom + vdelta;
 bf_thetas_degs = [];
 
-%×óÓÒÁ½¸ö¹Ø½Ú¹¹³ÉµÄObservation Strategies
-angle_step = 4;
+%å·¦å³ä¸¤ä¸ªå…³èŠ‚æ„æˆçš„Observation Strategies
+angle_step = 3;
 for bf_t2_deg = 90 : -angle_step: 25
     for bf_t1_deg = 90 : angle_step : 155
         bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
@@ -34,7 +34,7 @@ end
 %     bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
 % end
 
-D = 200; %¹Ì¶¨DÇó³ö¸Ë³¤±ÈÀı£¬Ó°Ïìcose1_func.m cose2_func.mµÄÉú³É
+D = 200; %å›ºå®šDæ±‚å‡ºæ†é•¿æ¯”ä¾‹ï¼Œå½±å“cose1_func.m cose2_func.mçš„ç”Ÿæˆ
 skew = [ 0 -1; 1 0];
 rOB1 = [L11 * cos(T1 + DELTA1) - D / 2; L11 * sin(T1 + DELTA1)];
 rOB2 = [L21 * cos(T2 + DELTA2) + D / 2; L21 * sin(T2 + DELTA2)];
@@ -44,13 +44,13 @@ b1 = (L12^2 - L22^2 + dB1B2^2) / (2 * dB1B2);
 h = sqrt(L12^2 - b1^2);
 rOC = rOB1 + b1 / dB1B2 * rB1B2 + h / dB1B2 * skew * rB1B2;
 
-%×ó²à±»¶¯½Ç·½³Ì
+%å·¦ä¾§è¢«åŠ¨è§’æ–¹ç¨‹
 rB1C = rOC - rOB1;
 rB1A1 = [-D/2; 0]-rOB1;
 COSG1 = rB1C.'*rB1A1 / (L11 * L12);
 COSE1 = COSG1 * cos(DELTA3) + sqrt(1- COSG1*COSG1) * sin(DELTA3);
 
-%ÓÒ²à±»¶¯½Ç·½³Ì
+%å³ä¾§è¢«åŠ¨è§’æ–¹ç¨‹
 rB2C = rOC - rOB2;
 rB2A2 = [D/2; 0]-rOB2;
 COSG2 = rB2C.'*rB2A2 / (L22 * L21);
@@ -63,7 +63,7 @@ if encoders == 4
     Jk_formula = [...
         diff(COSE1, L11), diff(COSE1, L12), diff(COSE1, L21), diff(COSE1, L22),  diff(COSE1, DELTA1), diff(COSE1, DELTA2), diff(COSE1, DELTA3), diff(COSE1, DELTA4);...
         diff(COSE2, L11), diff(COSE2, L12), diff(COSE2, L21), diff(COSE2, L22),  diff(COSE2, DELTA1), diff(COSE2, DELTA2), diff(COSE2, DELTA3), diff(COSE2, DELTA4)];
-    m = size(vactual, 1);        %ÔË¶¯Ñ§²ÎÊı¸öÊı
+    m = size(vactual, 1);        %è¿åŠ¨å­¦å‚æ•°ä¸ªæ•°
     measures = zeros(2*n,1);     %measured values = [cosg1; cosg2; ...]
     actuals  = zeros(2*n,1);     %real values of [cosg1; cosg2; ...]
     J = zeros(2 * n, m);
@@ -74,7 +74,7 @@ else
         diff(COSE1, L11), diff(COSE1, L12), diff(COSE1, L21), diff(COSE1, L22),  diff(COSE1, DELTA1), diff(COSE1, DELTA2), diff(COSE1, DELTA3)];
     vnom = vnom(1:size(vnom,1)-1, :);
     vactual = vactual(1:size(vactual,1)-1, :);
-    m = size(vactual, 1);        %ÔË¶¯Ñ§²ÎÊı¸öÊı
+    m = size(vactual, 1);        %è¿åŠ¨å­¦å‚æ•°ä¸ªæ•°
     measures = zeros(n,1);     %measured values = [cosg1; cosg2; ...]
     actuals  = zeros(n,1);     %real values of [cosg1; cosg2; ...]
     J = zeros(n, m);
@@ -82,31 +82,31 @@ else
 end
 thetas   = zeros(2,n);       %measure values of encoders in radian
 
-%·ÂÕæÊı¾İÉú³É
+%ä»¿çœŸæ•°æ®ç”Ÿæˆ
 for i=1:n
-    %¹Ø½Ú½Ç±àÂëÆ÷²âÁ¿Öµ
+    %å…³èŠ‚è§’ç¼–ç å™¨æµ‹é‡å€¼
     thetas(1,i) = deg2rad(bf_thetas_degs(1,i) - rad2deg(vactual(5)) - encoder_error + 2 * encoder_error * rand);
     thetas(2,i) = deg2rad(bf_thetas_degs(2,i) - rad2deg(vactual(6)) - encoder_error + 2 * encoder_error * rand);
     
-    %¼ÆËãÕæÖµ
+    %è®¡ç®—çœŸå€¼
     actual_t1_deg = bf_thetas_degs(1,i) - rad2deg(vactual(5));
     actual_t2_deg = bf_thetas_degs(2,i) - rad2deg(vactual(6));
     
     if encoders == 4
         actual_cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
         actual_cose2 = eval(subs(COSE2, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
-        %¼ÆËã±»¶¯±àÂëÆ÷½ÇÓàÏÒ²âÁ¿Öµ
+        %è®¡ç®—è¢«åŠ¨ç¼–ç å™¨è§’ä½™å¼¦æµ‹é‡å€¼
         measure_e1d = acosd(actual_cose1) - passive_encoder_error + 2 * passive_encoder_error * rand;
         measure_e2d = acosd(actual_cose2) - passive_encoder_error + 2 * passive_encoder_error * rand;
         actuals(2*i - 1) = actual_cose1;
         actuals(2*i)     = actual_cose2;
-        measures(2*i - 1) = cosd(measure_e1d); %ÆæÊıĞĞÎª×ó²à±àÂëÆ÷½ÇÓàÏÒ
-        measures(2*i)     = cosd(measure_e2d); %Å¼ÊıĞĞÎªÓÒ²à±àÂëÆ÷½ÇÓàÏÒ
+        measures(2*i - 1) = cosd(measure_e1d); %å¥‡æ•°è¡Œä¸ºå·¦ä¾§ç¼–ç å™¨è§’ä½™å¼¦
+        measures(2*i)     = cosd(measure_e2d); %å¶æ•°è¡Œä¸ºå³ä¾§ç¼–ç å™¨è§’ä½™å¼¦
         measures_ag(i)    = measures(2*i - 1);
         measures_ag(n+i)  = measures(2*i);
     else
         actual_cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
-        %¼ÆËã±»¶¯±àÂëÆ÷½ÇÓàÏÒ²âÁ¿Öµ
+        %è®¡ç®—è¢«åŠ¨ç¼–ç å™¨è§’ä½™å¼¦æµ‹é‡å€¼
         measure_e1d = acosd(actual_cose1) - passive_encoder_error + 2 * passive_encoder_error * rand;
         actuals(i) = actual_cose1;
         measures(i) = cosd(measure_e1d);
@@ -121,10 +121,10 @@ if do_linear_calibrate == 1
     means = measures;
     for i = 1:6
         for k = 1 : n %populate matrix J ; estimate using current phi
-            w_phi = [vreal; thetas(1, k); thetas(2, k)]; %ÔË¶¯Ñ§²ÎÊı£»Ö÷¶¯½Ç²âÁ¿Öµ
+            w_phi = [vreal; thetas(1, k); thetas(2, k)]; %è¿åŠ¨å­¦å‚æ•°ï¼›ä¸»åŠ¨è§’æµ‹é‡å€¼
             if encoders == 4
                 Jk = subs(Jk_formula, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], w_phi);
-                %Ê¹ÓÃµ±Ç°ÔË¶¯Ñ§²ÎÊı¹À¼Æ
+                %ä½¿ç”¨å½“å‰è¿åŠ¨å­¦å‚æ•°ä¼°è®¡
                 cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], w_phi));
                 cose2 = eval(subs(COSE2, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; DELTA4; T1; T2], w_phi));
                 J(2*k-1,:) = Jk(1,:);
@@ -133,7 +133,7 @@ if do_linear_calibrate == 1
                 estimate(2*k)   = cose2;
             else
                 Jk = subs(Jk_formula, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; T1; T2], w_phi);
-                %Ê¹ÓÃµ±Ç°ÔË¶¯Ñ§²ÎÊı¹À¼Æ
+                %ä½¿ç”¨å½“å‰è¿åŠ¨å­¦å‚æ•°ä¼°è®¡
                 cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; T1; T2], w_phi));
                 J(k,:) = Jk(1,:);
                 estimate(k) = cose1;
@@ -184,11 +184,12 @@ end
 if do_nonlinear_calibrate == 1
     t1s = thetas(1, :)';
     t2s = thetas(2, :)';
-    x0 = vnom;  %·ÇÏßĞÔ×îĞ¡¶ş³Ë·¨³õÊ¼Öµ
+    x0 = vnom;  %éçº¿æ€§æœ€å°äºŒä¹˜æ³•åˆå§‹å€¼
     options = optimoptions(@lsqnonlin,'Algorithm','trust-region-reflective', 'OptimalityTolerance', 1.000000e-7);
     [vreal,resnorm,residual,exitflag,output] = lsqnonlin(@self_eag,x0,[],[],options);
     diff = (vreal - vactual);
     disp(diff');
+    disp(resnorm);
     %L11 L12 L21 L22 DELTA1 DELTA2 DELTA3 DELTA4
     fprintf("L11=%f, L12=%f, L21=%f, L22=%f\n", diff(1), diff(2), diff(3), diff(4));
     fprintf("DELTA1=%f(deg), DELTA2=%f(deg)\n", rad2deg(diff(5)), rad2deg(diff(6)));

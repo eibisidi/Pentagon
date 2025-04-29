@@ -1,10 +1,10 @@
-%Ê¹ÓÃCMM²âÁ¿Ä©¶ËÎ»ÖÃ±ê¶¨ÔË¶¯Ñ§²ÎÊı
+ï»¿%ä½¿ç”¨CMMæµ‹é‡æœ«ç«¯ä½ç½®æ ‡å®šè¿åŠ¨å­¦å‚æ•°
 clear;
 syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 X0 Y0 ALPHA real;
 syms T1 T2 real;
-global measures_ag t1s t2s; %·ÇÏßĞÔ×îĞ¡¶ş³ËĞèÒªÊ¹ÓÃµÄÈ«¾ÖÊı¾İ
-global vactual;             %ÕæÊµÔË¶¯Ñ§²ÎÊı
-global vreal;               %±ê¶¨½á¹û
+global measures_ag t1s t2s; %éçº¿æ€§æœ€å°äºŒä¹˜éœ€è¦ä½¿ç”¨çš„å…¨å±€æ•°æ®
+global vactual;             %çœŸå®è¿åŠ¨å­¦å‚æ•°
+global vreal;               %æ ‡å®šç»“æœ
 skew = [ 0 -1; 1 0];
 rotation = [cos(GAMA) -sin(GAMA); sin(GAMA) cos(GAMA)];
 rOB1 = [L11 * cos(T1 + DELTA1) - D / 2; L11 * sin(T1 + DELTA1)];
@@ -26,16 +26,16 @@ Jk_formula = [diff(xWF, L11), diff(xWF, L12), diff(xWF, L21),  diff(xWF, L22), d
 do_linear_calibrate = 0;
 do_nonlinear_calibrate = 1;
 do_column_scaling = 1;
-encoder_error = 2/3600;             %±àÂëÆ÷²âÁ¿Îó²î
-cmm_error =0.001;                    %CMM×ø±ê²âÁ¿ÒÇÔëÉù
+encoder_error = 2/3600;             %ç¼–ç å™¨æµ‹é‡è¯¯å·®
+cmm_error =0.02;                    %CMMåæ ‡æµ‹é‡ä»ªå™ªå£°
 %          L11      L12     L21      L22        D     L23    GAMA DELTA1  DELTA2   X0    Y0   ALPHA
-vnom   =  [270;     370;   270;      370;     200;   370;      0;     0;      0;    0;    0;     0]; %ÔË¶¯Ñ§²ÎÊıÃûÒåÖµ
-vdelta =  [0.05;   0.04;   0.03;   -0.03;    0.16;   2.4;   0.04;  0.05;   0.02;    3;    3;  0.02]; %²ÎÊıÔöÁ¿
+vnom   =  [270;     370;   270;      370;     200;   370;      0;     0;      0;    0;    0;     0]; %è¿åŠ¨å­¦å‚æ•°åä¹‰å€¼
+vdelta =  [0.05;   0.04;   0.03;   -0.03;    0.16;   2.4;   0.04;  0.05;   0.02;    3;    3;  0.02]; %å‚æ•°å¢é‡
 %vdelta = zeros(size(vnom, 1), 1);
 vactual = vnom + vdelta;
 bf_thetas_degs = [];
 
-%×óÓÒÁ½¸ö¹Ø½Ú¹¹³ÉµÄObservation Strategies
+%å·¦å³ä¸¤ä¸ªå…³èŠ‚æ„æˆçš„Observation Strategies
 angle_step = 3;
 for bf_t2_deg = 90 : -angle_step: 25
     for bf_t1_deg = 90 : angle_step : 155
@@ -43,29 +43,29 @@ for bf_t2_deg = 90 : -angle_step: 25
     end
 end
 n=size(bf_thetas_degs, 2);   %measure times
-m = size(vactual, 1);        %ÔË¶¯Ñ§²ÎÊı¸öÊı
+m = size(vactual, 1);        %è¿åŠ¨å­¦å‚æ•°ä¸ªæ•°
 measures = zeros(2*n,1);     %measured values = [cosg1; cosg2; ...]
 actuals  = zeros(2*n,1);     %real values of [cosg1; cosg2; ...]
 J = zeros(2 * n, m);
 estimate = zeros(2*n,1);
 thetas   = zeros(2,n);       %measure values of encoders in radian
 measures_ag = zeros(2*n,1);  %measured values = [xWF1; xWF2; ...yWF1; yWF2...]
-%·ÂÕæÊı¾İÉú³É
+%ä»¿çœŸæ•°æ®ç”Ÿæˆ
 for i=1:n
-    %¹Ø½Ú½Ç±àÂëÆ÷²âÁ¿Öµ
+    %å…³èŠ‚è§’ç¼–ç å™¨æµ‹é‡å€¼
     thetas(1,i) = deg2rad(bf_thetas_degs(1,i) - rad2deg(vactual(8)) - encoder_error + 2 * encoder_error * rand);
     thetas(2,i) = deg2rad(bf_thetas_degs(2,i) - rad2deg(vactual(9)) - encoder_error + 2 * encoder_error * rand);
     
     actual_t1_deg = bf_thetas_degs(1,i) - rad2deg(vactual(8));
     actual_t2_deg = bf_thetas_degs(2,i) - rad2deg(vactual(9));
-    %¼ÆËãÕæÖµ
+    %è®¡ç®—çœŸå€¼
     actual_xWF =  eval(subs(xWF, [L11;L12;L21;L22;D;L23;GAMA;DELTA1;DELTA2;X0;Y0;ALPHA;T1;T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
     actual_yWF =  eval(subs(yWF, [L11;L12;L21;L22;D;L23;GAMA;DELTA1;DELTA2;X0;Y0;ALPHA;T1;T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
     
     actuals(2*i - 1) = actual_xWF;
     actuals(2*i)     = actual_yWF;
-	measures(2*i - 1) = actual_xWF - cmm_error + 2 * cmm_error * rand; %ÆæÊıĞĞÎªx×ø±ê
-    measures(2*i)     = actual_yWF - cmm_error + 2 * cmm_error * rand; %Å¼ÊıĞĞÎªy×ø±ê
+	measures(2*i - 1) = actual_xWF - cmm_error + 2 * cmm_error * rand; %å¥‡æ•°è¡Œä¸ºxåæ ‡
+    measures(2*i)     = actual_yWF - cmm_error + 2 * cmm_error * rand; %å¶æ•°è¡Œä¸ºyåæ ‡
     measures_ag(i)    = measures(2*i - 1);
     measures_ag(n+i)  = measures(2*i);
 end
@@ -78,9 +78,9 @@ if do_linear_calibrate == 1
     means = measures;
     for i = 1:6
         for k = 1 : n %populate matrix J ; estimate using current phi
-            w_phi = [vreal; thetas(1, k); thetas(2, k)]; %ÔË¶¯Ñ§²ÎÊı£»Ö÷¶¯½Ç²âÁ¿Öµ
+            w_phi = [vreal; thetas(1, k); thetas(2, k)]; %è¿åŠ¨å­¦å‚æ•°ï¼›ä¸»åŠ¨è§’æµ‹é‡å€¼
             Jk = subs(Jk_formula, [L11;L12;L21;L22;D;L23;GAMA;DELTA1;DELTA2;X0;Y0;ALPHA;T1;T2], w_phi);
-            %Ê¹ÓÃµ±Ç°ÔË¶¯Ñ§²ÎÊı¹À¼Æ
+            %ä½¿ç”¨å½“å‰è¿åŠ¨å­¦å‚æ•°ä¼°è®¡
             xwf = eval(subs(xWF, [L11;L12;L21;L22;D;L23;GAMA;DELTA1;DELTA2;X0;Y0;ALPHA;T1;T2], w_phi));
             ywf = eval(subs(yWF, [L11;L12;L21;L22;D;L23;GAMA;DELTA1;DELTA2;X0;Y0;ALPHA;T1;T2], w_phi));
             J(2*k-1,:) = Jk(1,:);
@@ -134,7 +134,7 @@ end
 if do_nonlinear_calibrate == 1
     t1s = thetas(1, :)';
     t2s = thetas(2, :)';
-    x0 = vnom;  %·ÇÏßĞÔ×îĞ¡¶ş³Ë·¨³õÊ¼Öµ
+    x0 = vnom;  %éçº¿æ€§æœ€å°äºŒä¹˜æ³•åˆå§‹å€¼
     options = optimoptions(@lsqnonlin,'Algorithm','trust-region-reflective', 'OptimalityTolerance', 1.000000e-6);
     [vreal,resnorm,residual,exitflag,output] = lsqnonlin(@cmm_eag,x0,[],[],options);
     diff = (vreal - vactual);

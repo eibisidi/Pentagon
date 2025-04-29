@@ -1,6 +1,6 @@
-global vactual;   %ÕæÊµÔË¶¯Ñ§²ÎÊı
-global vreal;     %±ê¶¨¼ÆËã½á¹û
-%×Ô±ê¶¨µÄÔË¶¯Ñ§²ÎÊıÓëCMM¸ñÊ½²»Í¬
+ï»¿global vactual;   %çœŸå®è¿åŠ¨å­¦å‚æ•°
+global vreal;     %æ ‡å®šè®¡ç®—ç»“æœ
+%è‡ªæ ‡å®šçš„è¿åŠ¨å­¦å‚æ•°ä¸CMMæ ¼å¼ä¸åŒ
 %self L11 L12 L21 L22 DELTA1 DELTA2 DELTA3 DELTA4
 %cmm  L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 X0 Y0 ALPHA
 w_actual= [vactual(1); vactual(2); vactual(3); vactual(4); 200; vactual(4); 0; vactual(5); vactual(6); 0; 0; 0];
@@ -13,20 +13,20 @@ y =  scale*(150:1:500);
 [X,Y] = meshgrid(x,y);
 Z_xBF = zeros(size(X));
 Z_yBF = zeros(size(X));
-Z_dist= zeros(size(X));             %¾àÀëÎó²î
+Z_dist= zeros(size(X));             %è·ç¦»è¯¯å·®
 Z_gearbox_error = zeros(size(X));
 for r=1:size(y,2)
     for c=1:size(x,2)
         xBF = X(r, c);
         yBF = Y(r, c);
-        t1t2 = ik_sym(w_actual, [xBF;yBF]);  %Ê¹ÓÃÕæÊµÖµ½øĞĞ·´½â
-        %²»¿¼ÂÇ¼õËÙÆ÷ÖØ¸´¶¨Î»¾«¶È
+        t1t2 = ik_sym(w_actual, [xBF;yBF]);  %ä½¿ç”¨çœŸå®å€¼è¿›è¡Œåè§£
+        %ä¸è€ƒè™‘å‡é€Ÿå™¨é‡å¤å®šä½ç²¾åº¦
         rOE_real = fk_sym(w_calib, t1t2);
         rOE_diff =  rOE_real - [xBF;yBF] ;
         Z_dist(r,c) = norm(rOE_diff);
         Z_xBF(r,c)   = rOE_diff(1);
         Z_yBF(r,c)   = rOE_diff(2);
-        %µş¼Ó¼õËÙÆ÷ÖØ¸´¶¨Î»Îó²î
+        %å åŠ å‡é€Ÿå™¨é‡å¤å®šä½è¯¯å·®
         if gearbox_error > 0
             t1load = t1t2(1) - gearbox_error + 2 * gearbox_error * rand;
             t2load = t1t2(2) - gearbox_error + 2 * gearbox_error * rand;
@@ -43,5 +43,5 @@ sX = surf(X,Y,Z_xBF,'EdgeColor','none');
 hold on;
 %figure('name', 'Position Error in Y');
 sY = surf(X,Y,Z_yBF,'EdgeColor','none');
-% figure('name', '¼õËÙÆ÷Îó²î');
+% figure('name', 'å‡é€Ÿå™¨è¯¯å·®');
 % s_gearbox_error = surfc(X,Y,Z_gearbox_error,'EdgeColor','none');

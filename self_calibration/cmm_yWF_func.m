@@ -1,5 +1,5 @@
-function yWF = cmm_yWF_func(x,T1,T2)
-%matlabFunction(xWF,'File','cmm_yWF_func')Éú³É;
+ï»¿function yWF = cmm_yWF_func(x,T1,T2)
+%matlabFunction(xWF,'File','cmm_yWF_func')ç”Ÿæˆ;
 L11 = x(1);
 L12 = x(2);
 L21 = x(3);

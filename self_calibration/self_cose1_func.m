@@ -1,5 +1,5 @@
-function cose1 = self_cose1_func(x,T1,T2)
-%D=200 matlabFunction(COSE1, 'File', 'self_cose1_func')Éú³É
+ï»¿function cose1 = self_cose1_func(x,T1,T2)
+%D=200 matlabFunction(COSE1, 'File', 'self_cose1_func')ç”Ÿæˆ
 L11 = x(1);
 L12 = x(2);
 L21 = x(3);
