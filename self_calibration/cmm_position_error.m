@@ -1,8 +1,9 @@
 global vactual;   %真实运动学参数
 global vreal;     %标定计算结果
 
-w = vreal;
-%w = vactual;
+w_actual= vactual;
+w_calib = vreal;
+%w = w_actual;
 gearbox_error = deg2rad(0.00);
 scale = 1;
 x = scale*(-250:1:250);
@@ -14,15 +15,15 @@ for r=1:size(y,2)
     for c=1:size(x,2)
         xBF = X(r, c);
         yBF = Y(r, c);
-        t1t2 = ik_sym(vactual, [xBF;yBF]);  %使用真实值进行反解
+        t1t2 = ik_sym(w_actual, [xBF;yBF]);  %使用真实值进行反解
         %不考虑减速器重复定位精度
-        rOE_real = fk_sym(w, t1t2);
+        rOE_real = fk_sym(w_calib, t1t2);
         rOE_diff = [xBF;yBF] - rOE_real;
         Z(r,c) = norm(rOE_diff);
         %叠加减速器重复定位误差
         t1load = t1t2(1) - gearbox_error + 2 * gearbox_error * rand;
         t2load = t1t2(2) - gearbox_error + 2 * gearbox_error * rand;
-        rOE_real = fk_sym(w, [t1load; t2load]);
+        rOE_real = fk_sym(w_calib, [t1load; t2load]);
         rOE_diff = [xBF;yBF] - rOE_real;
         Z_gearbox_error(r,c) = norm(rOE_diff);
     end
