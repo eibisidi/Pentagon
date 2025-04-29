@@ -1,4 +1,4 @@
-﻿function Fx = cmm_eag(x)
+function Fx = cmm_eag(x)
 %aggregated pose error vector
 global measures_ag t1s t2s;
 Fx = zeros(size(measures_ag));

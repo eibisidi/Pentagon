@@ -1,4 +1,4 @@
-﻿function cose2 = self_cose2_func(x,T1,T2)
+function cose2 = self_cose2_func(x,T1,T2)
 %D=200 matlabFunction(COSE2, 'File', 'self_cose1_func')生成
 L11 = x(1);
 L12 = x(2);

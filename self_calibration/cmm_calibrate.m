@@ -1,4 +1,4 @@
-﻿%使用CMM测量末端位置标定运动学参数
+%使用CMM测量末端位置标定运动学参数
 clear;
 syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 X0 Y0 ALPHA real;
 syms T1 T2 real;

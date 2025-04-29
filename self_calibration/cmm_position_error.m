@@ -1,4 +1,4 @@
-﻿global vactual;   %真实运动学参数
+global vactual;   %真实运动学参数
 global vreal;     %标定计算结果
 
 w_actual= vactual;

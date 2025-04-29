@@ -1,4 +1,4 @@
-﻿global vactual;   %真实运动学参数
+global vactual;   %真实运动学参数
 global vreal;     %标定计算结果
 %自标定的运动学参数与CMM格式不同
 %self L11 L12 L21 L22 DELTA1 DELTA2 DELTA3 DELTA4

@@ -1,4 +1,4 @@
-﻿%使用冗余编码器进行运动学参数自标定
+%使用冗余编码器进行运动学参数自标定
 clear;
 syms L11 L12 L21 L22 D DELTA1 DELTA2 DELTA3 DELTA4 real;
 syms T1 T2 real;            %左右主动轴编码器读数

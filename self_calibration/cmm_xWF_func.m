@@ -1,4 +1,4 @@
-﻿function xWF = cmm_xWF_func(x,T1,T2)
+function xWF = cmm_xWF_func(x,T1,T2)
 %matlabFunction(xWF,'File','cmm_xWF_func')生成;
 L11 = x(1);
 L12 = x(2);
