@@ -1,4 +1,5 @@
 function yWF = yWF_func(x,T1,T2)
+%matlabFunction(xWF,'File','yWF_func')Éú³É;
 L11 = x(1);
 L12 = x(2);
 L21 = x(3);

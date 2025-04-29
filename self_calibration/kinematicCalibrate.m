@@ -1,7 +1,10 @@
 %使用CMM测量末端位置标定运动学参数
+clear;
 syms L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 X0 Y0 ALPHA real;
 syms T1 T2 real;
-global measures_ag t1s t2s
+global measures_ag t1s t2s; %非线性最小二乘需要使用的全局数据
+global vactual;             %真实运动学参数
+global vreal;               %标定结果
 skew = [ 0 -1; 1 0];
 rotation = [cos(GAMA) -sin(GAMA); sin(GAMA) cos(GAMA)];
 rOB1 = [L11 * cos(T1 + DELTA1) - D / 2; L11 * sin(T1 + DELTA1)];
@@ -25,18 +28,18 @@ do_nonlinear_calibrate = 1;
 do_column_scaling = 1;
 encoder_error = 2/3600;             %编码器测量误差
 cmm_error =0.02;                    %CMM坐标测量仪噪声
-%          L11 L12    L21   L22     D    L23   GAMA DELTA1 DELTA2 X0 Y0 ALPHA
-vnom   =  [270; 370;  270;  370;   200;  370;   0;     0;   0;    0;    0;   0]; %运动学参数名义值
-vdelta =  [0.5; 0.45; 0.55; 0.35; 0.03; 0.03; 0.04; 0.05;  0.02;  3;    3; 0.02]; %参数增量
+%          L11      L12     L21      L22        D     L23    GAMA DELTA1  DELTA2   X0    Y0   ALPHA
+vnom   =  [270;     370;   270;      370;     200;   370;      0;     0;      0;    0;    0;     0]; %运动学参数名义值
+vdelta =  [0.05;   0.04;   0.03;   -0.03;    0.16;   2.4;   0.04;  0.05;   0.02;    3;    3;  0.02]; %参数增量
 %vdelta = zeros(size(vnom, 1), 1);
 vactual = vnom + vdelta;
 bf_thetas_degs = [];
 
 %左右两个关节构成的Observation Strategies
-angle_step = 4;
+angle_step = 3;
 for bf_t2_deg = 90 : -angle_step: 25
     for bf_t1_deg = 90 : angle_step : 155
-        bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
+          bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
     end
 end
 n=size(bf_thetas_degs, 2);   %measure times
@@ -133,6 +136,11 @@ if do_nonlinear_calibrate == 1
     t2s = thetas(2, :)';
     x0 = vnom;  %非线性最小二乘法初始值
     options = optimoptions(@lsqnonlin,'Algorithm','trust-region-reflective', 'OptimalityTolerance', 1.000000e-6);
-    [x,resnorm,residual,exitflag,output] = lsqnonlin(@eag_cmm,x0,[],[],options);
-    disp(x' - vactual');
+    [vreal,resnorm,residual,exitflag,output] = lsqnonlin(@eag_cmm,x0,[],[],options);
+    diff = (vreal - vactual);
+    disp(diff');
+    fprintf("L11=%f, L12=%f, L21=%f, L22=%f, D=%f\n", diff(1), diff(2), diff(3), diff(4), diff(5));
+    fprintf("L23=%f, GAMA=%f(deg)\n", diff(6), rad2deg(diff(7)));
+    fprintf("DELTA1=%f(deg), DELTA2=%f(deg)\n", rad2deg(diff(8)), rad2deg(diff(9)));
+    fprintf("X0=%f, Y0=%f, ALPHA=%f(deg)\n", diff(10), diff(11),  rad2deg(diff(12)));
 end

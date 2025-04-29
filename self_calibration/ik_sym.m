@@ -6,16 +6,10 @@ L12 = w(2);
 L21 = w(3);
 L22 = w(4);
 D = w(5);
-L23 = L22;
+L23 = L22;          %以E点为准
 GAMA = 0;
 DELTA1 = w(8);
 DELTA2 = w(9);
-% X0 = w(10); 
-% Y0 = w(11);
-% ALPHA = w(12);
-% pTmp = pE_WF - [X0; Y0];
-% rotation = [cos(ALPHA) sin(ALPHA); -sin(ALPHA) cos(ALPHA)];
-% rOE = rotation' * pTmp;
 
 rOE = pE_Base;
 
