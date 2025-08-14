@@ -1,4 +1,4 @@
-﻿function [bf] = fk_sym(w, phi)
+function [bf] = fk_sym(w, phi)
 %进行FK,得到{BF}中E的坐标
 % w: L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 real;
 % phi 左右关节角

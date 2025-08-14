@@ -9,25 +9,38 @@ global measures_ag t1s t2s; %非线性最小二乘需要使用的全局数据
 global vactual;             %真实运动学参数
 global vreal;               %标定结果
 
-encoders = 4;
+encoders = 3;               %安装编码器个数4:左右两个被动角安装冗余编码器 3:仅左侧安装冗余编码器
 do_linear_calibrate = 0;
 do_nonlinear_calibrate = 1;
-do_column_scaling = 1;
-encoder_error = 60/3600;                                   %编码器测量误差
-passive_encoder_error = 6/360;                            %被动关节编码器噪声
-vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %运动学参数名义值
-vdelta =  [0.5; 0.45; 0.55; 0.35; 0.03; 0.03; 0.04; 0.05]; %参数增量
-%vdelta = zeros(size(vnom, 1), 1);
-vactual = vnom + vdelta;
-bf_thetas_degs = [];
+do_column_scaling = 1;      %线性最小二乘法Column Scaling
+encoder_error = 4/3600;                                   %编码器测量误差
+passive_encoder_error = 4/3600;                           %被动关节编码器噪声
+vnom   =  [270; 370;  270;  370;    0;    0;   0;     0]; %运动学参数名义值，单位(mm, radian)
+vrange =  [0.2; 0.2; 0.15;  0.2; 0.03; 0.03; 0.04; 0.05];
+vdelta = zeros(size(vnom, 1), 1);                           %参数增量
+for cursor = 1 : size(vnom, 1)
+    vdelta(cursor) = -vrange(cursor) + 2 * rand * vrange(cursor);
+end
+
+vactual = vnom + vdelta;                                    %运动学参数实际值，单位(mm, radian)
+bf_thetas_degs = [];                                        %2*n matrix.主动角真值Base Frame
+
+bf_thetas_degs = csvread('theta_pairs.csv'); %加载由plot_workspace.m产生的角度对
 
 %左右两个关节构成的Observation Strategies
-angle_step = 3;
+angle_step = 5;
 for bf_t2_deg = 90 : -angle_step: 25
     for bf_t1_deg = 90 : angle_step : 155
         bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
     end
 end
+% 
+% angle_step = 1;
+% for bf_t2_deg = -50 : angle_step: 110
+%     bf_t1_deg = 60 + bf_t2_deg + 50;
+%     bf_thetas_degs = [bf_thetas_degs, [bf_t1_deg; bf_t2_deg]];
+% end
+
 % for i=1:10
 %     bf_t1_deg = 90 + rand*(155 - 90);
 %     bf_t2_deg = 90 - rand*(155 - 90);
@@ -64,8 +77,8 @@ if encoders == 4
         diff(COSE1, L11), diff(COSE1, L12), diff(COSE1, L21), diff(COSE1, L22),  diff(COSE1, DELTA1), diff(COSE1, DELTA2), diff(COSE1, DELTA3), diff(COSE1, DELTA4);...
         diff(COSE2, L11), diff(COSE2, L12), diff(COSE2, L21), diff(COSE2, L22),  diff(COSE2, DELTA1), diff(COSE2, DELTA2), diff(COSE2, DELTA3), diff(COSE2, DELTA4)];
     m = size(vactual, 1);        %运动学参数个数
-    measures = zeros(2*n,1);     %measured values = [cosg1; cosg2; ...]
-    actuals  = zeros(2*n,1);     %real values of [cosg1; cosg2; ...]
+    measures = zeros(2*n,1);     %measured values = [cose1; cose2; ...]
+    actuals  = zeros(2*n,1);     %real values of [cosge1; cose2; ...]
     J = zeros(2 * n, m);
     estimate = zeros(2*n,1);
     measures_ag = zeros(2*n,1);  %measured values = [cosg1; cosg1; ...cosg2; cosg2]
@@ -75,10 +88,11 @@ else
     vnom = vnom(1:size(vnom,1)-1, :);
     vactual = vactual(1:size(vactual,1)-1, :);
     m = size(vactual, 1);        %运动学参数个数
-    measures = zeros(n,1);     %measured values = [cosg1; cosg2; ...]
-    actuals  = zeros(n,1);     %real values of [cosg1; cosg2; ...]
+    measures = zeros(n,1);     %measured values = [cose1; ...]
+    actuals  = zeros(n,1);     %real values of [cose1;...]
     J = zeros(n, m);
     estimate = zeros(n,1);
+    measures_ag = zeros(n,1);  %measured values = [cose1;...]
 end
 thetas   = zeros(2,n);       %measure values of encoders in radian
 
@@ -102,14 +116,15 @@ for i=1:n
         actuals(2*i)     = actual_cose2;
         measures(2*i - 1) = cosd(measure_e1d); %奇数行为左侧编码器角余弦
         measures(2*i)     = cosd(measure_e2d); %偶数行为右侧编码器角余弦
-        measures_ag(i)    = measures(2*i - 1);
-        measures_ag(n+i)  = measures(2*i);
+        measures_ag(i)    = measures(2*i - 1); %COSE1 测量值
+        measures_ag(n+i)  = measures(2*i);     %COSE2 测量值
     else
         actual_cose1 = eval(subs(COSE1, [L11;L12; L21; L22; DELTA1; DELTA2; DELTA3; T1; T2], [vactual; deg2rad(actual_t1_deg); deg2rad(actual_t2_deg)]));
         %计算被动编码器角余弦测量值
         measure_e1d = acosd(actual_cose1) - passive_encoder_error + 2 * passive_encoder_error * rand;
         actuals(i) = actual_cose1;
         measures(i) = cosd(measure_e1d);
+        measures_ag(i)    = measures(i); %COSE1 测量值
     end
 end
 
@@ -186,12 +201,17 @@ if do_nonlinear_calibrate == 1
     t2s = thetas(2, :)';
     x0 = vnom;  %非线性最小二乘法初始值
     options = optimoptions(@lsqnonlin,'Algorithm','trust-region-reflective', 'OptimalityTolerance', 1.000000e-7);
-    [vreal,resnorm,residual,exitflag,output] = lsqnonlin(@self_eag,x0,[],[],options);
+    if encoders == 4
+        [vreal,resnorm,residual,exitflag,output] = lsqnonlin(@self_eag,x0,[],[],options);
+    else
+        [vreal,resnorm,residual,exitflag,output] = lsqnonlin(@self_eag3,x0,[],[],options);
+    end
     diff = (vreal - vactual);
+    disp('vreal - vactual');
     disp(diff');
-    disp(resnorm);
+    %disp(resnorm);
     %L11 L12 L21 L22 DELTA1 DELTA2 DELTA3 DELTA4
     fprintf("L11=%f, L12=%f, L21=%f, L22=%f\n", diff(1), diff(2), diff(3), diff(4));
     fprintf("DELTA1=%f(deg), DELTA2=%f(deg)\n", rad2deg(diff(5)), rad2deg(diff(6)));
-    fprintf("DELTA3=%f(deg), DELTA4=%f(deg)\n", rad2deg(diff(7)), rad2deg(diff(8)));
+    %fprintf("DELTA3=%f(deg), DELTA4=%f(deg)\n", rad2deg(diff(7)), rad2deg(diff(8)));
 end

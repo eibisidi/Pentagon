@@ -1,4 +1,4 @@
-﻿function phi = ik_sym( w, pE_Base)
+function phi = ik_sym( w, pE_Base)
 %进行IK,得到关节角
 % w: L11 L12 L21 L22 D L23 GAMA DELTA1 DELTA2 real;
 % pE_Base {BF}中E的坐标
